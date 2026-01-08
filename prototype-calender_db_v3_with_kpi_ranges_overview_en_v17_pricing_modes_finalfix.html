@@ -1,0 +1,2682 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>RMS – Revenue Management</title>
+<style>
+    /* =========================
+       GLOBAL STYLE (Original)
+    ========================= */
+	    html, body{ overflow-x: hidden; }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: #f4f6fb;
+      color: #1f2937;
+    }
+
+    .topbar {
+      height: 60px;
+      background: #1d4ed8;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      font-weight: 600;
+    }
+
+    .layout { display: block; }
+
+    .content { flex: 1; padding: 24px; overflow-x: hidden; }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+
+    h1 { font-size: 20px; margin: 0; }
+
+    .button {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .button:disabled{ opacity: 0.55; cursor: not-allowed; }
+    .primary { background: #1d4ed8; color: white; }
+    .secondary { background: #e5e7eb; }
+
+    .toggle{
+      background: #e5e7eb;
+      color: #111827;
+      border: 1px solid #d1d5db;
+    }
+    .toggle:hover{ filter: brightness(0.98); }
+    .toggle.active{
+      background: #111827;
+      color: #ffffff;
+      border-color: #111827;
+    }
+
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid #e5e7eb;
+      vertical-align: top;
+    }
+    th {
+      background: #f9fafb;
+      font-weight: 600;
+    }
+
+    
+    
+    .pinbar{
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 10px 0 12px;
+      font-size: 13px;
+      color: #374151;
+      flex-wrap: wrap;
+    }
+    .pinbar .pin-item{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 999px;
+      background: #ffffff;
+    }
+    .pinbar input[type="checkbox"]{
+      width: 14px;
+      height: 14px;
+      accent-color: #1d4ed8;
+    }
+    .detail-table-wrap{
+      width: 100%;
+      max-width: 100%;
+      /* Independent scroll area for the detail table */
+      max-height: 380px;
+      overflow-x: auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+    .detail-table-wrap table{
+      /* Let the table grow to its content so horizontal scroll is always within this box */
+      width: max-content;
+      min-width: 100%;
+    }
+    .detail-table-wrap th,
+    .detail-table-wrap td{
+      white-space: nowrap;
+    }
+    /* Column sizing (auto-fit to content; JS will fine-tune widths after render) */
+    .detail-table-wrap [data-col="room"]{ min-width: 220px; }
+    .detail-table-wrap [data-col="avail"]{ min-width: 200px; }
+    .detail-table-wrap [data-col="latest"]{ min-width: 220px; }
+    .detail-table-wrap [data-col="rec"]{ min-width: 240px; }
+    .detail-table-wrap [data-col^="plan-"]{ min-width: 180px; text-align: right; }
+    .detail-table-wrap [data-col^="plan-"] .price{ text-align: right; }
+    .detail-table-wrap [data-col="latest"], 
+    .detail-table-wrap [data-col="rec"]{ text-align: left; }
+
+    /* Ensure opaque row backgrounds so pinned columns never look transparent */
+    .detail-table-wrap tbody td{ background: #ffffff; }
+    .detail-table-wrap tbody tr.row-focused td{ background: #eef2ff; }
+
+
+    .sticky-cell{
+      position: sticky;
+      background: inherit; /* inherits from td/th which we make opaque */
+      background-clip: padding-box;
+      z-index: 6;
+    }
+    th.sticky-cell{
+      background: #f9fafb;
+      background-clip: padding-box;
+      z-index: 12;
+    }
+    .sticky-shadow{
+      box-shadow: 2px 0 0 rgba(229, 231, 235, 1);
+    }
+.footer-note {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 12px;
+    }
+
+    .hidden { display: none; }
+
+    /* =========================
+       PRICING RULES PAGE LAYOUT
+    ========================= */
+    /* Pricing rules page should align with other pages (content padding = 24px)
+       and keep a little extra right gutter so the main card never hugs the edge. */
+    #pricingRulesView{
+      width: 100%;
+      box-sizing: border-box;
+      /* match .content padding on the left; add a bit more on the right */
+      padding: 24px 32px 24px 24px;
+    }
+    #pricingRulesView > .card{
+      /* let the card size within the padded container */
+      width: auto;
+      max-width: none;
+      margin: 0 0 20px 0;
+    }
+	    /* When the rules page is visible, use the whole content width (avoid big side gutters). */
+/* Pricing rules layout: avoid page-level horizontal scroll */
+	    .rules-grid{
+	      margin-top: 14px;
+	      display: grid;
+	      /* minmax(0, 1fr) prevents overflow from long content */
+	      grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+	      gap: 14px;
+	      align-items: start;
+	    }
+	    .rules-grid > .card{ min-width: 0; }
+
+/* Pricing mode selector */
+.mode-list{
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.mode-option{
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+}
+.mode-option:hover{ border-color: #cbd5e1; }
+.mode-option input[type="radio"]{
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  accent-color: #1d4ed8;
+  flex: 0 0 auto;
+}
+.mode-meta{ min-width: 0; flex: 1; }
+.mode-title{ font-weight: 800; }
+.mode-desc{ margin-top: 2px; font-size: 12px; color: #6b7280; line-height: 1.35; }
+.mode-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 12px;
+}
+.rules-disabled{
+  opacity: 0.65;
+}
+.rules-disabled *{
+  pointer-events: none;
+}
+.rules-disabled .footer-note{
+  pointer-events: auto;
+  opacity: 1;
+}
+    @media (max-width: 980px){
+      .rules-grid{ grid-template-columns: 1fr; }
+    }
+
+    /* =========================
+       MODULE: STYLES
+       (Future modules add CSS here)
+    ========================= */
+
+    /* ===== KPI Dashboard Styles ===== */
+    .kpi-grid{
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    .kpi-card{
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 16px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      min-height: 98px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .kpi-label{
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .kpi-value{
+      margin-top: 8px;
+      font-size: 22px;
+      font-weight: 800;
+      color: #111827;
+    }
+    .kpi-sub{
+      margin-top: 6px;
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 600;
+    }
+    .dashselect{
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      color: #111827;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+    @media (max-width: 980px){
+      .kpi-grid{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px){
+      .kpi-grid{ grid-template-columns: 1fr; }
+    }
+
+
+    /* ===== Calendar Module Styles ===== */
+    .calendar-shell{
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .calendar-toolbar{
+      background: #1d4ed8;
+      color: #fff;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .calendar-toolbar .toolbtn{
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      color: #fff;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .calendar-toolbar .toolbtn:hover{ background: rgba(255,255,255,0.18); }
+
+    .calendar-toolbar .monthnav{
+      margin-left: auto;
+      margin-right: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+    }
+
+    .calendar-toolbar .navbtn{
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .calendar-toolbar .navbtn:hover{ background: rgba(255,255,255,0.18); }
+
+    .calendar-toolbar .right{
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .calendar-toolbar .label{
+      font-size: 13px;
+      opacity: 0.95;
+      white-space: nowrap;
+    }
+
+    .calendar-toolbar .roomselect{
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+    .calendar-toolbar .roomselect option{ color: #111827; }
+
+    .calendar{
+      padding: 14px;
+      background: #fff;
+    }
+
+    .calendar-dow{
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      margin-bottom: 10px;
+      color: #6b7280;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .calendar-grid{
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+    }
+
+    .day{
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 90px;
+      background: #fff;
+      cursor: pointer;
+      position: relative;
+      transition: box-shadow 0.12s ease, transform 0.12s ease;
+      overflow: hidden;
+    }
+
+    .day:hover{
+      box-shadow: 0 6px 14px rgba(29,78,216,0.10);
+      transform: translateY(-1px);
+    }
+
+    .day.muted{
+      background: #fafbff;
+      color: #9ca3af;
+      cursor: default;
+    }
+
+    .day.selected{
+      outline: 2px solid rgba(29,78,216,0.55);
+      box-shadow: 0 10px 20px rgba(29,78,216,0.12);
+    }
+
+    .day .daynum{
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 600;
+    }
+    /* Occupancy fill (bottom-up) */
+    .day .occfill{
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 0%;
+      background: rgba(29,78,216,0.14);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .day .day-content{
+      position: relative;
+      z-index: 1;
+    }
+
+
+    /* Only show percent + price */
+    .day .occ{
+      margin-top: 6px;
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 600;
+    }
+
+    .day .price{
+      margin-top: 14px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #111827;
+    }
+
+    .day .soldout{
+      margin-top: 14px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #1d4ed8;
+    }
+
+    .day-detail{
+      border-top: 1px solid #e5e7eb;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .day-detail-head{
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 10px;
+      padding-bottom: 10px;
+    }
+
+    .day-detail .date{
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .day-detail .sub{
+      margin-top: 4px;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .day-detail-actions{
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    @media (max-width: 980px){
+      .calendar-toolbar .monthnav{
+        margin-left: 0;
+        margin-right: auto;
+      }
+    }
+    @media (max-width: 760px){
+      .calendar-dow, .calendar-grid{ gap: 6px; }
+      .day{ min-height: 82px; }
+    }
+  </style>
+</head>
+<body>
+<div class="topbar">Komodo Resort</div>
+<div class="layout">
+<div class="content">
+<div id="dashboardView">
+<div class="card">
+<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+<div>
+<h1 style="margin:0;">Overview</h1>
+<div class="rms-muted" style="margin-top:6px;">
+<span id="kpiRangeDesc">Property-level KPIs for this month</span> <span class="rms-muted" id="kpiRefDateLabel"></span>
+</div>
+</div>
+<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+<div id="kpiRangeGroup" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+<button class="button toggle" data-range="day" id="rangeDay">Today</button>
+<button class="button toggle active" data-range="month" id="rangeMonth">This month</button>
+<button class="button toggle" data-range="quarter" id="rangeQuarter">This quarter</button>
+</div>
+<button class="button secondary" id="btnGoRules">Pricing rules</button>
+<button class="button primary" id="btnGoCalendar">Open calendar</button>
+</div>
+</div>
+<div class="kpi-grid" style="margin-top:16px;">
+<div class="kpi-card">
+<div class="kpi-label">Revenue</div>
+<div class="kpi-value" id="kpiRevenue">—</div>
+<div class="kpi-sub" id="kpiRevenueSub">—</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-label">RevPAR</div>
+<div class="kpi-value" id="kpiRevPAR">—</div>
+<div class="kpi-sub" id="kpiRevPARSub">—</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-label">Occupancy</div>
+<div class="kpi-value" id="kpiOcc">—</div>
+<div class="kpi-sub" id="kpiOccSub">—</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-label">ADR</div>
+<div class="kpi-value" id="kpiADR">—</div>
+<div class="kpi-sub" id="kpiADRSub">—</div>
+</div>
+</div>
+<div class="footer-note">
+      Notes: Revenue is estimated from sold rooms × (plan-mix weighted price). ADR = Revenue / sold rooms. RevPAR = Revenue / available rooms.
+    </div>
+</div>
+</div>
+<div class="hidden" id="calendarView">
+<div class="card" id="rms-root">
+<h1>Revenue Management</h1>
+<p style="color:#6b7280;font-size:13px;margin:8px 0 16px 0;">
+          Click a date to view details. Prototype uses a tiny in-memory “DB” (date × room type × rate plan) for prices and inventory.
+        </p>
+<!-- Calendar goes here -->
+<div id="calendarContainer">
+<div class="calendar-shell">
+<div class="calendar-toolbar">
+<button class="toolbtn" id="btnToday">📅 Today</button>
+<button class="toolbtn" id="btnGoDashboard">🏠 Overview</button>
+<button class="toolbtn" id="btnManualPrices">Manually set prices</button>
+<button class="toolbtn" id="btnPricingRules">Change pricing rules</button>
+<div aria-label="Month navigation" class="monthnav">
+<button aria-label="Previous month" class="navbtn" id="prevMonth">‹</button>
+<div id="monthTitle">February 2024</div>
+<button aria-label="Next month" class="navbtn" id="nextMonth">›</button>
+</div>
+<div class="right">
+<span class="label">Room type price</span>
+<select class="roomselect" id="roomTypeSelect">
+<option selected="" value="Ocean View Bungalow">Ocean View Bungalow</option>
+<option value="Family Bungalow">Family Bungalow</option>
+<option value="Grand View">Grand View</option>
+<option value="Grand Beach">Grand Beach</option>
+<option value="Private Bamboo Bungalow">Private Bamboo Bungalow</option>
+<option value="Presidential Suite">Presidential Suite</option>
+</select>
+<span class="label">Rate plan</span>
+<select class="roomselect" id="ratePlanSelect">
+<option selected="" value="Flexible Rate">Flexible Rate</option>
+<option value="Non-refundable Rate">Non-refundable Rate</option>
+<option value="Breakfast Included">Breakfast Included</option>
+<option value="Package Deal">Package Deal</option>
+</select>
+</div>
+</div>
+<div class="calendar">
+<div class="calendar-dow">
+<div>Monday</div><div>Tuesday</div><div>Wednesday</div><div>Thursday</div>
+<div>Friday</div><div>Saturday</div><div>Sunday</div>
+</div>
+<div class="calendar-grid" id="calendarGrid"></div>
+</div>
+<div class="day-detail">
+<div class="day-detail-head">
+<div>
+<div class="date" id="detailDate">Fri, Feb 16, 2024</div>
+<div class="sub" id="detailSub">Showing: Ocean View Bungalow • Flexible Rate</div>
+</div>
+<div class="day-detail-actions">
+<button class="button secondary" id="detailManual">Manually set prices</button>
+<button class="button secondary" id="detailRules">Change pricing rules</button>
+<button class="button primary" id="detailApply">Apply recommendation</button>
+</div>
+</div>
+<div class="pinbar" id="pinBar">
+<div style="font-weight:700;">Pin columns</div>
+<label class="pin-item"><input checked="" id="pin_room" type="checkbox"/> Room type</label>
+<label class="pin-item"><input checked="" id="pin_avail" type="checkbox"/> Availability</label>
+<label class="pin-item"><input checked="" id="pin_latest" type="checkbox"/> Latest change</label>
+<label class="pin-item"><input checked="" id="pin_rec" type="checkbox"/> Recommendation</label>
+<div class="footer-note" style="margin-left:auto;">Scroll right to view other rate plans</div>
+</div>
+<div class="detail-table-wrap" id="detailTableWrap">
+<table>
+<thead id="roomTableHead"></thead>
+<tbody id="roomTableBody"></tbody>
+</table>
+</div>
+<div class="footer-note">
+                Prototype: prices + inventory come from an in-memory DB. Manual/apply changes update DB and refresh the UI.
+              </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="hidden" id="pricingRulesView">
+<div class="card">
+<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+<div>
+<h1 style="margin:0;">Pricing rule change</h1>
+<div class="rms-muted" style="margin-top:6px;">
+          Edit the rule set used to generate price recommendations. Changes are saved locally in this browser.
+        </div>
+</div>
+<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+<button class="button" id="btnRulesBackCalendar">Back to calendar</button>
+<button class="button" id="btnRulesBackOverview">Back to overview</button>
+<button class="button primary" id="btnRulesSave">Save changes</button>
+</div>
+</div>
+<div style="margin-top:14px; display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+  <div>
+    <h2 style="margin:0; font-size:16px;">Pricing mode</h2>
+    <div class="rms-muted" style="margin-top:6px;">
+      Select how price recommendations are generated. The active mode applies across the calendar.
+    </div>
+  </div>
+  <div class="mode-pill" id="activeModePill">Active mode: —</div>
+</div>
+
+<div class="mode-list" id="pricingModeList" style="margin-top:10px;">
+  <label class="mode-option">
+    <input type="radio" name="pricingMode" value="manual" id="mode_manual">
+    <div class="mode-meta">
+      <div class="mode-title">Manual pricing</div>
+      <div class="mode-desc">No rules. Recommendations are disabled; prices are set manually.</div>
+    </div>
+  </label>
+
+  <label class="mode-option">
+    <input type="radio" name="pricingMode" value="occ" id="mode_occ">
+    <div class="mode-meta">
+      <div class="mode-title">Occupancy-based</div>
+      <div class="mode-desc">Only occupancy affects the recommendation: farther dates do not matter.</div>
+    </div>
+  </label>
+
+  <label class="mode-option">
+    <input type="radio" name="pricingMode" value="occ_lead" id="mode_occ_lead">
+    <div class="mode-meta">
+      <div class="mode-title">Lead time + occupancy</div>
+      <div class="mode-desc">Farther dates → higher price, higher occupancy → higher price. The total adjustment combines both factors.</div>
+    </div>
+  </label>
+</div>
+
+<div class="footer-note" id="modeNote" style="margin-top:8px;"></div>
+<div style="border-top:1px solid #e5e7eb; margin:14px 0;"></div>
+<div class="rules-grid">
+<div class="card" id="rulesTiersCard" style="margin:0;">
+<h2 id="rulesOccTitle" style="margin:0 0 10px 0; font-size:16px;">Occupancy-based recommendation tiers</h2>
+<div class="rms-muted" id="rulesOccDesc" style="margin-bottom:10px;">
+          For the selected date and room type, the recommendation adjusts the current price by the tier percentage.
+        </div>
+<div style="overflow:auto; border:1px solid #e5e7eb; border-radius:12px;">
+<table class="detail-table" style="width:100%; border-collapse:separate; border-spacing:0;">
+<thead>
+<tr>
+<th style="position:sticky; top:0;">Min occ %</th>
+<th style="position:sticky; top:0;">Max occ %</th>
+<th style="position:sticky; top:0;">Adjustment %</th>
+</tr>
+</thead>
+<tbody id="rulesTierBody"></tbody>
+</table>
+</div>
+<div style="display:flex; gap:10px; align-items:center; margin-top:10px; flex-wrap:wrap;">
+<button class="button" id="btnRulesAddTier">Add tier</button>
+<button class="button" id="btnRulesReset">Reset to default</button>
+<span class="footer-note">Tip: Keep tiers contiguous (e.g., 0–35, 36–45, ...).</span>
+</div>
+</div>
+<div class="card" id="rulesBehaviorCard" style="margin:0;">
+<h2 style="margin:0 0 10px 0; font-size:16px;">Display behavior</h2>
+<div style="display:flex; flex-direction:column; gap:10px;">
+<label style="display:flex; gap:10px; align-items:flex-start;">
+<input id="ruleSoldOutHideRec" type="checkbox">
+<div>
+<div style="font-weight:700;">Hide recommendation when sold out</div>
+<div class="footer-note">If a room type is sold out on a date, show “Sold out” instead of a target price.</div>
+</div>
+</input></label>
+<label style="display:flex; gap:10px; align-items:flex-start;">
+<input id="ruleSoldOutHideLatest" type="checkbox">
+<div>
+<div style="font-weight:700;">Hide latest price change when sold out</div>
+<div class="footer-note">Prevents “current price” messaging when inventory is 0.</div>
+</div>
+</input></label>
+<div style="border-top:1px solid #e5e7eb; margin:2px 0;"></div>
+<label style="display:flex; gap:10px; align-items:center;">
+<span style="min-width:140px; font-weight:700;">Rounding (IDR)</span>
+<input class="input" id="ruleRounding" min="1" step="1" style="width:140px;" type="number">
+</input></label>
+<div class="footer-note">Example: rounding 5000 means the recommended price will snap to the nearest 5,000 IDR.</div>
+</div>
+<div style="border-top:1px solid #e5e7eb; margin:14px 0;"></div>
+<h2 style="margin:0 0 10px 0; font-size:16px;">Change log</h2>
+<div id="rulesLog" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+                                 font-size:12px; color:#111827; background:#f9fafb; border:1px solid #e5e7eb;
+                                 border-radius:12px; padding:10px; max-height:240px; overflow:auto;"></div>
+</div>
+
+<div class="card hidden" id="rulesLeadCard" style="margin:0; grid-column: 1 / -1;">
+  <h2 style="margin:0 0 10px 0; font-size:16px;">Lead-time adjustment tiers</h2>
+  <div class="rms-muted" id="rulesLeadDesc" style="margin-bottom:10px;">
+    In this mode, farther dates increase the recommended price. The final recommendation combines lead time and occupancy adjustments.
+  </div>
+
+  <div style="overflow:auto; border:1px solid #e5e7eb; border-radius:12px;">
+    <table class="detail-table" style="width:100%; border-collapse:separate; border-spacing:0;">
+      <thead>
+        <tr>
+          <th style="text-align:left; padding:10px 12px;">Min lead days</th>
+          <th style="text-align:left; padding:10px 12px;">Max lead days</th>
+          <th style="text-align:left; padding:10px 12px;">Adjustment %</th>
+        </tr>
+      </thead>
+      <tbody id="rulesLeadTierBody"></tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <button class="button" id="btnRulesAddLeadTier">Add lead-time tier</button>
+    <button class="button" id="btnRulesResetLead">Reset lead-time tiers</button>
+    <div class="footer-note">Tip: Keep tiers contiguous (e.g., 0–7, 8–30, 31–90, ...).</div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- =========================================================
+       MODULE CONTAINERS (placeholders for future interactions)
+  ========================================================== -->
+<div id="toast-root"></div>
+<div id="modal-root"></div>
+<div id="drawer-root"></div>
+<script>
+    /* =========================================================
+       CORE NAMESPACE (stable)
+    ========================================================== */
+    window.RMS = {
+      state: {
+        selectedDay: null,
+        selectedRoomType: null,
+        selectedRatePlan: null,
+        history: [],
+        undoStack: []
+      },
+      modules: {},
+      registerModule(name, module) {
+        this.modules[name] = module;
+        if (module.init) module.init(this);
+      }
+    };
+
+    function renderAll() {
+      Object.values(RMS.modules).forEach(m => {
+        if (m.render) m.render(RMS);
+      });
+    }
+
+    /* =========================================================
+       MODULE: UI UTILS (toast / modal / drawer)
+    ========================================================== */
+    RMS.registerModule("uiUtilsBase", {
+      init(RMS) {
+        if (!document.getElementById("rms-ui-utils-style")) {
+          const style = document.createElement("style");
+          style.id = "rms-ui-utils-style";
+          style.textContent = `
+            #toast-root{
+              position: fixed;
+              right: 16px;
+              bottom: 16px;
+              display: flex;
+              flex-direction: column;
+              gap: 10px;
+              z-index: 9999;
+              pointer-events: none;
+            }
+            .rms-toast{
+              background: #111827;
+              color: #fff;
+              padding: 10px 12px;
+              border-radius: 8px;
+              font-size: 13px;
+              box-shadow: 0 10px 20px rgba(0,0,0,0.18);
+              max-width: 340px;
+              line-height: 1.25;
+              opacity: 0;
+              transform: translateY(8px);
+              transition: opacity .15s ease, transform .15s ease;
+              pointer-events: auto;
+            }
+            .rms-toast.show{ opacity: 1; transform: translateY(0); }
+            .rms-toast .title{ font-weight: 700; margin-bottom: 4px; }
+            .rms-toast .row{ display:flex; gap:8px; margin-top:8px; justify-content:flex-end; }
+            .rms-toast button{
+              border: 1px solid rgba(255,255,255,0.25);
+              background: rgba(255,255,255,0.10);
+              color: #fff;
+              border-radius: 6px;
+              padding: 6px 8px;
+              font-size: 12px;
+              cursor: pointer;
+            }
+            .rms-toast button:hover{ background: rgba(255,255,255,0.16); }
+
+            .rms-backdrop{
+              position: fixed;
+              inset: 0;
+              background: rgba(17,24,39,0.45);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              z-index: 9998;
+              padding: 18px;
+            }
+
+            .rms-modal{
+              width: min(720px, 100%);
+              background: #fff;
+              border-radius: 10px;
+              box-shadow: 0 18px 40px rgba(0,0,0,0.22);
+              overflow: hidden;
+            }
+            .rms-modal-header{
+              padding: 14px 16px;
+              border-bottom: 1px solid #e5e7eb;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 12px;
+            }
+            .rms-modal-title{ font-weight: 800; font-size: 15px; }
+            .rms-modal-close{
+              border: 1px solid #e5e7eb;
+              background: #f9fafb;
+              border-radius: 8px;
+              width: 34px;
+              height: 34px;
+              cursor: pointer;
+              font-size: 16px;
+            }
+            .rms-modal-close:hover{ background: #f3f4f6; }
+            .rms-modal-body{ padding: 16px; }
+            .rms-modal-footer{
+              padding: 14px 16px;
+              border-top: 1px solid #e5e7eb;
+              display: flex;
+              gap: 10px;
+              justify-content: flex-end;
+              background: #fff;
+            }
+            .rms-muted{ color:#6b7280; font-size:13px; }
+          `;
+          document.head.appendChild(style);
+        }
+
+        const ensureRoot = (id) => {
+          let el = document.getElementById(id);
+          if (!el) {
+            el = document.createElement("div");
+            el.id = id;
+            document.body.appendChild(el);
+          }
+          return el;
+        };
+        const toastRoot = ensureRoot("toast-root");
+        const modalRoot = ensureRoot("modal-root");
+
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") modalRoot.innerHTML = "";
+        });
+
+        const api = {
+          toast(message, opts = {}) {
+            const { title = "", duration = 1800, actionText = "", onAction = null } = opts;
+
+            const t = document.createElement("div");
+            t.className = "rms-toast";
+            t.innerHTML = `
+              ${title ? `<div class="title">${title}</div>` : ""}
+              <div>${message}</div>
+              ${actionText ? `<div class="row"><button type="button" class="act">${actionText}</button></div>` : ""}
+            `;
+
+            toastRoot.appendChild(t);
+            requestAnimationFrame(() => t.classList.add("show"));
+
+            let timer = null;
+            const remove = () => {
+              t.classList.remove("show");
+              setTimeout(() => t.remove(), 150);
+            };
+
+            if (actionText && onAction) {
+              t.querySelector(".act")?.addEventListener("click", () => {
+                try { onAction(); } finally { remove(); }
+              });
+            }
+
+            timer = setTimeout(remove, duration);
+            t.addEventListener("mouseenter", () => timer && clearTimeout(timer));
+            t.addEventListener("mouseleave", () => timer = setTimeout(remove, duration));
+          },
+
+          openModal({ title = "Dialog", bodyHTML = "", footerHTML = "", onClose = null } = {}) {
+            modalRoot.innerHTML = `
+              <div class="rms-backdrop" role="dialog" aria-modal="true">
+                <div class="rms-modal">
+                  <div class="rms-modal-header">
+                    <div class="rms-modal-title">${title}</div>
+                    <button type="button" class="rms-modal-close" aria-label="Close">✕</button>
+                  </div>
+                  <div class="rms-modal-body">${bodyHTML}</div>
+                  ${footerHTML ? `<div class="rms-modal-footer">${footerHTML}</div>` : ""}
+                </div>
+              </div>
+            `;
+
+            const backdrop = modalRoot.querySelector(".rms-backdrop");
+            const closeBtn = modalRoot.querySelector(".rms-modal-close");
+
+            const close = () => {
+              modalRoot.innerHTML = "";
+              if (typeof onClose === "function") onClose();
+            };
+
+            closeBtn?.addEventListener("click", close);
+            backdrop?.addEventListener("click", (e) => {
+              if (e.target === backdrop) close();
+            });
+
+            return { close };
+          },
+
+          closeModal() { modalRoot.innerHTML = ""; },
+
+          confirm({ title = "Confirm", message = "Are you sure?", confirmText = "Confirm", cancelText = "Cancel" } = {}) {
+            return new Promise((resolve) => {
+              const footer = `
+                <button type="button" class="button secondary" id="rmsConfirmCancel">${cancelText}</button>
+                <button type="button" class="button primary" id="rmsConfirmOk">${confirmText}</button>
+              `;
+              api.openModal({
+                title,
+                bodyHTML: `<div class="rms-muted" style="white-space:pre-line;">${message}</div>`,
+                footerHTML: footer,
+                onClose: () => resolve(false)
+              });
+
+              document.getElementById("rmsConfirmCancel")?.addEventListener("click", () => {
+                api.closeModal(); resolve(false);
+              });
+              document.getElementById("rmsConfirmOk")?.addEventListener("click", () => {
+                api.closeModal(); resolve(true);
+              });
+            });
+          }
+        };
+
+        RMS.ui = api;
+      }
+    });
+
+    /* =========================================================
+       MODULE: TINY IN-MEMORY DB (date × room × rate)
+       - prices
+       - inventory (total + remaining + delta24h)
+       - latest price change events (per date × room × rate)
+    ========================================================== */
+    RMS.registerModule("db", {
+      init(RMS) {
+        const roomTypes = [
+          "Ocean View Bungalow",
+          "Family Bungalow",
+          "Grand View",
+          "Grand Beach",
+          "Private Bamboo Bungalow",
+          "Presidential Suite"
+        ];
+
+        const ratePlans = [
+          "Flexible Rate",
+          "Non-refundable Rate",
+          "Breakfast Included",
+          "Package Deal"
+        ];
+
+        const roomMult = {
+          "Ocean View Bungalow": 1.00,
+          "Family Bungalow": 1.12,
+          "Grand View": 1.35,
+          "Grand Beach": 1.48,
+          "Private Bamboo Bungalow": 1.22,
+          "Presidential Suite": 2.70
+        };
+
+        const rateMult = {
+          "Flexible Rate": 1.00,
+          "Non-refundable Rate": 0.92,
+          "Breakfast Included": 1.10,
+          "Package Deal": 1.18
+        };
+
+        const roomCapacity = {
+          "Ocean View Bungalow": 12,
+          "Family Bungalow": 8,
+          "Grand View": 6,
+          "Grand Beach": 4,
+          "Private Bamboo Bungalow": 5,
+          "Presidential Suite": 2
+        };
+
+        const roundTo = (n, step = 5000) => Math.round(n / step) * step;
+
+        const dateKey = (y, mi, d) => {
+          const mm = String(mi + 1).padStart(2, "0");
+          const dd = String(d).padStart(2, "0");
+          return `${y}-${mm}-${dd}`;
+        };
+
+        // Base prices (Ocean View + Flexible) per day for Feb (taken from your earlier mock)
+        const febBase = {
+          1:1900000, 2:1875000, 3:2050000, 4:1625000, 5:1975000, 6:1925000, 7:1850000,
+          8:1925000, 9:1750000, 10:1900000, 11:1675000, 12:1650000, 13:1800000, 14:2150000,
+          15:1925000, 16:2400000, 17:null, 18:2050000, 19:1950000, 20:1875000, 21:1900000,
+          22:2000000, 23:2250000, 24:null, 25:1825000, 26:1775000, 27:1800000, 28:1850000, 29:1925000
+        };
+
+        const buildMonthBase = (days, baseStart) => {
+          const o = {};
+          for (let d = 1; d <= days; d++) {
+            // small deterministic variation
+            const bump = ((d % 9) * 0.018) + ((d % 4 === 0) ? -0.03 : 0);
+            o[d] = roundTo(baseStart * (1 + bump), 5000);
+          }
+          // a couple sold-out days
+          o[Math.min(17, days)] = null;
+          o[Math.min(24, days)] = null;
+          return o;
+        };
+
+        const janBase = buildMonthBase(31, 1750000);
+        const marBase = buildMonthBase(31, 1950000);
+
+        const db = {
+          roomTypes,
+          ratePlans,
+          roomMult,
+          rateMult,
+          roomCapacity,
+          prices: {},        // prices[date][room][rate] = number|null
+          priceMode: {},     // priceMode[date][room][rate] = "auto"|"manual"|"applied"
+          inventory: {},     // inventory[date][room] = {total, remaining, delta24h}
+          latestChange: {},  // latestChange[date][room][rate] = {old, now, when}
+          lastSoldPrice: {}, // lastSoldPrice[date][room][rate] = number|null
+          baseFlexibleOcean: {} // baseFlexibleOcean[date] = base price (Ocean+Flexible) or null
+        };
+
+        const ensure = (obj, k, initVal) => {
+          if (!obj[k]) obj[k] = initVal;
+          return obj[k];
+        };
+
+        const seedMonth = (year, monthIndex, baseMap, whenLabel) => {
+          const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+
+          for (let day = 1; day <= daysInMonth; day++) {
+            const dk = dateKey(year, monthIndex, day);
+            const base = baseMap[day] ?? null;
+            db.baseFlexibleOcean[dk] = base;
+
+            const pDay = ensure(db.prices, dk, {});
+            const mDay = ensure(db.priceMode, dk, {});
+            const iDay = ensure(db.inventory, dk, {});
+            const cDay = ensure(db.latestChange, dk, {});
+
+            roomTypes.forEach((room) => {
+              pDay[room] = pDay[room] || {};
+              mDay[room] = mDay[room] || {};
+              cDay[room] = cDay[room] || {};
+
+              // inventory
+              const total = roomCapacity[room] ?? 5;
+              // deterministic-ish remaining: more sold near weekends
+              const dow = new Date(year, monthIndex, day).getDay(); // 0 Sun ... 6 Sat
+              const isWeekend = (dow === 0 || dow === 6);
+              const pressure = (isWeekend ? 0.72 : 0.55) + ((day % 7) * 0.03);
+              let remaining = Math.max(0, Math.round(total * (1 - Math.min(0.98, pressure))));
+              // if base is null => sold out across the board
+              if (base == null) remaining = 0;
+
+              const delta24 = -((day % 4)); // 0..-3 (availability usually decreases)
+              iDay[room] = { total, remaining, delta24h: delta24 };
+
+              const sDay = ensure(db.lastSoldPrice, dk, {});
+              sDay[room] = sDay[room] || {};
+
+              // prices for all rate plans
+              ratePlans.forEach((rp) => {
+                const rm = roomMult[room] ?? 1.0;
+                const rtm = rateMult[rp] ?? 1.0;
+
+                const autoPrice = (base == null) ? null : roundTo(base * rm * rtm, 5000);
+
+// If sold out for this date+room: don't show "current price", keep last sold price for history
+if (iDay[room].remaining <= 0) {
+  pDay[room][rp] = null;
+  mDay[room][rp] = "auto";
+  sDay[room][rp] = autoPrice; // last sold at the would-be auto price (prototype)
+  const old = (autoPrice == null) ? null : roundTo(autoPrice * 0.96, 5000);
+  cDay[room][rp] = { old, now: autoPrice, when: whenLabel };
+} else {
+  pDay[room][rp] = autoPrice;
+  mDay[room][rp] = "auto";
+  sDay[room][rp] = null;
+  const old = (autoPrice == null) ? null : roundTo(autoPrice * 0.96, 5000);
+  cDay[room][rp] = { old, now: autoPrice, when: whenLabel };
+}
+              });
+            });
+          }
+        };
+
+        // Seed Jan/Feb/Mar 2024
+        seedMonth(2024, 0, janBase, "Initial");
+        seedMonth(2024, 1, febBase, "Jan 1");
+        seedMonth(2024, 2, marBase, "Initial");
+
+        // Public API
+        RMS.db = {
+          data: db,
+
+          dateKey,
+
+          getPrice(dateKey, roomType, ratePlan) {
+            return db.prices?.[dateKey]?.[roomType]?.[ratePlan] ?? null;
+          },
+
+          getLastSoldPrice(dateKey, roomType, ratePlan) {
+            return db.lastSoldPrice?.[dateKey]?.[roomType]?.[ratePlan]
+              ?? db.latestChange?.[dateKey]?.[roomType]?.[ratePlan]?.now
+              ?? null;
+          },
+
+          getPriceMode(dateKey, roomType, ratePlan) {
+            return db.priceMode?.[dateKey]?.[roomType]?.[ratePlan] ?? "auto";
+          },
+
+          setPrice(dateKey, roomType, ratePlan, newPrice, mode = "manual") {
+            const old = db.prices?.[dateKey]?.[roomType]?.[ratePlan] ?? null;
+
+            if (!db.prices[dateKey]) db.prices[dateKey] = {};
+            if (!db.prices[dateKey][roomType]) db.prices[dateKey][roomType] = {};
+            db.prices[dateKey][roomType][ratePlan] = newPrice;
+
+            if (!db.priceMode[dateKey]) db.priceMode[dateKey] = {};
+            if (!db.priceMode[dateKey][roomType]) db.priceMode[dateKey][roomType] = {};
+            db.priceMode[dateKey][roomType][ratePlan] = mode;
+
+            if (!db.latestChange[dateKey]) db.latestChange[dateKey] = {};
+            if (!db.latestChange[dateKey][roomType]) db.latestChange[dateKey][roomType] = {};
+            db.latestChange[dateKey][roomType][ratePlan] = { old, now: newPrice, when: "Just now" };
+
+            return { old, now: newPrice };
+          },
+
+          resetToAuto(dateKey, roomType, ratePlan) {
+            const base = db.baseFlexibleOcean[dateKey];
+            const rm = db.roomMult[roomType] ?? 1.0;
+            const rtm = db.rateMult[ratePlan] ?? 1.0;
+            const autoPrice = (base == null) ? null : roundTo(base * rm * rtm, 5000);
+
+            return this.setPrice(dateKey, roomType, ratePlan, autoPrice, "auto");
+          },
+
+          getInventory(dateKey, roomType) {
+            return db.inventory?.[dateKey]?.[roomType] ?? { total: 0, remaining: 0, delta24h: 0 };
+          },
+
+          setInventory(dateKey, roomType, patch) {
+            if (!db.inventory[dateKey]) db.inventory[dateKey] = {};
+            const current = db.inventory[dateKey][roomType] || { total: 0, remaining: 0, delta24h: 0 };
+            db.inventory[dateKey][roomType] = { ...current, ...patch };
+          },
+
+          getLatestChange(dateKey, roomType, ratePlan) {
+            return db.latestChange?.[dateKey]?.[roomType]?.[ratePlan] ?? { old: null, now: null, when: "—" };
+          }
+        };
+      }
+    });
+
+    /* =========================================================
+       MODULE: CORE CALENDAR (now powered by RMS.db)
+    ========================================================== */
+    
+    /* =========================================================
+       MODULE: PRICING RULES
+       (Editable rule set for recommendations; stored in localStorage)
+    ========================================================== */
+    RMS.registerModule("pricingRules", {
+      storageKey: "rms_pricing_rules_v1",
+      logKey: "rms_pricing_rules_log_v1",
+
+      defaultRules(){
+        return {
+          rounding: 5000,
+          soldOut: {
+            hideRecommendation: true,
+            hideLatestChange: true
+          },
+pricingMode: "occ",
+leadTimeTiers: [
+  { minDays: 0,  maxDays: 7,   adjPct: 0 },
+  { minDays: 8,  maxDays: 30,  adjPct: 2 },
+  { minDays: 31, maxDays: 90,  adjPct: 5 },
+  { minDays: 91, maxDays: 365, adjPct: 8 }
+],
+          occupancyTiers: [
+            { min: 0,  max: 35, adjPct: -5 },
+            { min: 36, max: 45, adjPct: -3 },
+            { min: 46, max: 69, adjPct: 0 },
+            { min: 70, max: 84, adjPct: 3 },
+            { min: 85, max: 100, adjPct: 6 }
+          ]
+        };
+      },
+
+      getRules(){
+        try {
+          const raw = localStorage.getItem(this.storageKey);
+          if (!raw) return this.defaultRules();
+          const parsed = JSON.parse(raw);
+          return this.normalizeRules(parsed);
+        } catch (e) {
+          return this.defaultRules();
+        }
+      },
+
+      normalizeRules(r){
+        const d = this.defaultRules();
+        const out = {
+  rounding: Number(r?.rounding ?? d.rounding),
+  soldOut: {
+    hideRecommendation: !!(r?.soldOut?.hideRecommendation ?? d.soldOut.hideRecommendation),
+    hideLatestChange: !!(r?.soldOut?.hideLatestChange ?? d.soldOut.hideLatestChange)
+  },
+  pricingMode: (typeof r?.pricingMode === "string" ? r.pricingMode : d.pricingMode),
+  leadTimeTiers: Array.isArray(r?.leadTimeTiers) ? r.leadTimeTiers.map(t => ({
+    minDays: Number(t.minDays),
+    maxDays: Number(t.maxDays),
+    adjPct: Number(t.adjPct)
+  })) : d.leadTimeTiers,
+  occupancyTiers: Array.isArray(r?.occupancyTiers) ? r.occupancyTiers.map(t => ({
+    min: Number(t.min),
+    max: Number(t.max),
+    adjPct: Number(t.adjPct)
+  })) : d.occupancyTiers
+};
+
+        if (!Number.isFinite(out.rounding) || out.rounding <= 0) out.rounding = d.rounding;
+
+// Pricing mode
+const allowedModes = new Set(["manual", "occ", "occ_lead"]);
+if (!allowedModes.has(out.pricingMode)) out.pricingMode = d.pricingMode;
+
+// Lead time tiers
+out.leadTimeTiers = (out.leadTimeTiers || [])
+  .filter(t => Number.isFinite(t.minDays) && Number.isFinite(t.maxDays) && Number.isFinite(t.adjPct))
+  .map(t => ({
+    minDays: Math.max(0, Math.round(t.minDays)),
+    maxDays: Math.max(0, Math.round(t.maxDays)),
+    adjPct: Math.max(-100, Math.min(100, Number(t.adjPct)))
+  }))
+  .filter(t => t.maxDays >= t.minDays)
+  .sort((a,b) => a.minDays - b.minDays);
+
+if (!out.leadTimeTiers.length) out.leadTimeTiers = d.leadTimeTiers;
+
+        // Clean tiers
+        out.occupancyTiers = out.occupancyTiers
+          .filter(t => Number.isFinite(t.min) && Number.isFinite(t.max) && Number.isFinite(t.adjPct))
+          .map(t => ({
+            min: Math.max(0, Math.min(100, Math.round(t.min))),
+            max: Math.max(0, Math.min(100, Math.round(t.max))),
+            adjPct: Math.max(-100, Math.min(100, Number(t.adjPct)))
+          }))
+          .sort((a,b) => a.min - b.min);
+
+        if (!out.occupancyTiers.length) out.occupancyTiers = d.occupancyTiers;
+
+        return out;
+      },
+
+      setRules(rules, { logMessage } = {}){
+        const normalized = this.normalizeRules(rules);
+        localStorage.setItem(this.storageKey, JSON.stringify(normalized));
+        this.appendLog(logMessage || "Saved pricing rules");
+        return normalized;
+      },
+
+      reset(){
+        localStorage.removeItem(this.storageKey);
+        this.appendLog("Reset to default rules");
+      },
+
+      getLog(){
+        try {
+          const raw = localStorage.getItem(this.logKey);
+          if (!raw) return [];
+          const arr = JSON.parse(raw);
+          return Array.isArray(arr) ? arr : [];
+        } catch {
+          return [];
+        }
+      },
+
+      appendLog(message){
+        const ts = new Date().toISOString().replace("T"," ").slice(0,19);
+        const line = `[${ts}] ${message}`;
+        const log = this.getLog();
+        log.unshift(line);
+        localStorage.setItem(this.logKey, JSON.stringify(log.slice(0, 50)));
+      },
+
+      getModeLabel(mode){
+        const m = String(mode || "");
+        if (m === "manual") return "Manual pricing";
+        if (m === "occ") return "Occupancy-based";
+        if (m === "occ_lead") return "Lead time + occupancy";
+        return m || "—";
+      },
+
+      // Public API consumed by the calendar view
+      recommendPrice(current, occPercent, dateKey = null){
+  if (current == null) return null;
+  const rules = this.getRules();
+  const mode = rules.pricingMode || "occ";
+
+  // Manual pricing mode: no automatic recommendation
+  if (mode === "manual") return null;
+
+  // Occupancy adjustment
+  const occ = Number(occPercent);
+  const occTier = rules.occupancyTiers.find(t => occ >= t.min && occ <= t.max);
+  const occAdjPct = occTier ? Number(occTier.adjPct) : 0;
+
+  // Lead time adjustment (only for occ_lead)
+  let leadAdjPct = 0;
+  if (mode === "occ_lead" && dateKey) {
+    const parseKey = (k) => {
+      const [y,m,d] = String(k).split("-").map(Number);
+      return new Date(y, (m||1) - 1, d || 1);
+    };
+    const refKey = window.RMS?.time?.businessDateKey || dateKey;
+    const ms = parseKey(dateKey).getTime() - parseKey(refKey).getTime();
+    const leadDays = Math.max(0, Math.round(ms / 86400000));
+
+    const lt = rules.leadTimeTiers.find(t => leadDays >= t.minDays && leadDays <= t.maxDays);
+    leadAdjPct = lt ? Number(lt.adjPct) : 0;
+  }
+
+  const totalAdj = (occAdjPct + leadAdjPct) / 100;
+  const rec = current * (1 + totalAdj);
+  const round = Math.max(1, Number(rules.rounding) || 1);
+  return Math.round(rec / round) * round;
+},
+
+      init(RMS){
+        // Expose helpers under RMS.pricing for convenient access across modules
+        RMS.pricing = {
+          getRules: () => this.getRules(),
+          setRules: (r, opts) => this.setRules(r, opts),
+          recommendPrice: (current, occPercent, dateKey = null) => this.recommendPrice(current, occPercent, dateKey),
+          getModeLabel: (mode) => this.getModeLabel(mode)
+        };
+
+        // Establish a consistent "business date" for lead-time calculations in this prototype
+        if (!RMS.time) RMS.time = {};
+        if (!RMS.time.businessDateKey) {
+          try {
+            const keys = Object.keys(RMS.db?.data?.prices || {});
+            RMS.time.businessDateKey = keys.sort().slice(-1)[0] || new Date().toISOString().slice(0,10);
+          } catch {
+            RMS.time.businessDateKey = new Date().toISOString().slice(0,10);
+          }
+        }
+
+        // Bind UI controls (rules view)
+        document.getElementById("btnRulesSave")?.addEventListener("click", () => {
+          const rules = this.readFromUI();
+          if (!rules) return; // validation already shown
+          this.setRules(rules, { logMessage: "Saved changes from Pricing rule change page" });
+          RMS.ui?.toast?.("Saved", { title: "Pricing rules" });
+          // Re-render details table if open
+          RMS.modules.coreCalendar?.renderDetailsTable?.(RMS);
+          this.render(RMS);
+        });
+
+        document.getElementById("btnRulesReset")?.addEventListener("click", () => {
+          this.reset();
+          RMS.ui?.toast?.("Default rules restored", { title: "Pricing rules" });
+          this.render(RMS);
+          RMS.modules.coreCalendar?.renderDetailsTable?.(RMS);
+        });
+
+        document.getElementById("btnRulesAddTier")?.addEventListener("click", () => {
+  const cur = this.readFromUI({ validate: false }) || this.getRules();
+  cur.occupancyTiers.push({ min: 0, max: 0, adjPct: 0 });
+  this.render(RMS, cur);
+});
+
+document.getElementById("btnRulesAddLeadTier")?.addEventListener("click", () => {
+  const cur = this.readFromUI({ validate: false }) || this.getRules();
+  cur.leadTimeTiers = cur.leadTimeTiers || [];
+  cur.leadTimeTiers.push({ minDays: 0, maxDays: 0, adjPct: 0 });
+  this.render(RMS, cur);
+});
+
+document.getElementById("btnRulesResetLead")?.addEventListener("click", () => {
+  const cur = this.readFromUI({ validate: false }) || this.getRules();
+  const defaults = this.defaultRules();
+  cur.leadTimeTiers = defaults.leadTimeTiers;
+  this.render(RMS, cur);
+});
+
+// Mode selection: re-render instantly (Save to apply)
+document.getElementById("pricingModeList")?.addEventListener("change", () => {
+  const cur = this.readFromUI({ validate: false });
+  if (!cur) return;
+  this.render(RMS, cur);
+});
+
+// Delete tier actions (draft only; Save to apply)
+document.getElementById("rulesTierBody")?.addEventListener("click", (e) => {
+  const btn = e.target?.closest?.('button[data-action="delete-tier"]');
+  if (!btn) return;
+  const idx = Number(btn.dataset.idx);
+  const cur = this.readFromUI({ validate: false });
+  if (!cur) return;
+  if (Number.isFinite(idx)) cur.occupancyTiers.splice(idx, 1);
+  this.render(RMS, cur);
+});
+
+document.getElementById("rulesLeadTierBody")?.addEventListener("click", (e) => {
+  const btn = e.target?.closest?.('button[data-action="delete-lead-tier"]');
+  if (!btn) return;
+  const idx = Number(btn.dataset.idx);
+  const cur = this.readFromUI({ validate: false });
+  if (!cur) return;
+  cur.leadTimeTiers = cur.leadTimeTiers || [];
+  if (Number.isFinite(idx)) cur.leadTimeTiers.splice(idx, 1);
+  this.render(RMS, cur);
+});
+
+document.getElementById("rulesTierBody")?.addEventListener("input"
+, (e) => {
+          const t = e.target;
+          if (!(t instanceof HTMLInputElement)) return;
+          // keep UI responsive; no-op here, values will be read on Save
+        });
+      },
+
+      readFromUI({ validate = true } = {}){
+        const tbody = document.getElementById("rulesTierBody");
+        if (!tbody) return null;
+
+        const rows = [...tbody.querySelectorAll("tr")];
+        const tiers = rows.map((tr) => {
+          const min = Number(tr.querySelector('input[data-field="min"]')?.value);
+          const max = Number(tr.querySelector('input[data-field="max"]')?.value);
+          const adjPct = Number(tr.querySelector('input[data-field="adjPct"]')?.value);
+          return { min, max, adjPct };
+        });
+
+        // Basic validation (occupancy tiers)
+        if (validate) {
+          for (const t of tiers) {
+            if (!Number.isFinite(t.min) || !Number.isFinite(t.max) || !Number.isFinite(t.adjPct)) {
+              window.RMS?.ui?.toast?.("Please fill in all tier values.", { title: "Validation" });
+              return null;
+            }
+            if (t.min > t.max) {
+              window.RMS?.ui?.toast?.("Tier min occupancy must be ≤ max occupancy.", { title: "Validation" });
+              return null;
+            }
+          }
+        } else {
+          // Make the draft robust while switching modes (avoid blocking on partially edited inputs)
+          for (const t of tiers) {
+            if (!Number.isFinite(t.min)) t.min = 0;
+            if (!Number.isFinite(t.max)) t.max = 0;
+            if (!Number.isFinite(t.adjPct)) t.adjPct = 0;
+            if (t.min > t.max) [t.min, t.max] = [t.max, t.min];
+          }
+        }
+
+        
+        // Lead-time tiers
+        const leadTbody = document.getElementById("rulesLeadTierBody");
+        const leadRows = leadTbody ? [...leadTbody.querySelectorAll("tr")] : [];
+        const leadTimeTiers = leadRows.length ? leadRows.map((tr) => {
+          const minDays = Number(tr.querySelector('input[data-field="minDays"]')?.value);
+          const maxDays = Number(tr.querySelector('input[data-field="maxDays"]')?.value);
+          const adjPct = Number(tr.querySelector('input[data-field="adjPct"]')?.value);
+          return { minDays, maxDays, adjPct };
+        }) : (this.getRules().leadTimeTiers || []);
+
+        if (validate) {
+          for (const t of leadTimeTiers) {
+            if (!Number.isFinite(t.minDays) || !Number.isFinite(t.maxDays) || !Number.isFinite(t.adjPct)) {
+              window.RMS?.ui?.toast?.("Please fill in all lead-time tier values.", { title: "Validation" });
+              return null;
+            }
+            if (t.minDays > t.maxDays) {
+              window.RMS?.ui?.toast?.("Lead-time tier min days must be ≤ max days.", { title: "Validation" });
+              return null;
+            }
+          }
+        } else {
+          for (const t of leadTimeTiers) {
+            if (!Number.isFinite(t.minDays)) t.minDays = 0;
+            if (!Number.isFinite(t.maxDays)) t.maxDays = 0;
+            if (!Number.isFinite(t.adjPct)) t.adjPct = 0;
+            if (t.minDays > t.maxDays) [t.minDays, t.maxDays] = [t.maxDays, t.minDays];
+          }
+        }
+
+const rounding = Number(document.getElementById("ruleRounding")?.value);
+        if (!Number.isFinite(rounding) || rounding <= 0) {
+          window.RMS?.ui?.toast?.("Rounding must be a positive number.", { title: "Validation" });
+          return null;
+        }
+
+        const hideRec = !!document.getElementById("ruleSoldOutHideRec")?.checked;
+        const hideLatest = !!document.getElementById("ruleSoldOutHideLatest")?.checked;
+
+        const pricingMode = document.querySelector('input[name="pricingMode"]:checked')?.value || this.getRules().pricingMode || "occ";
+
+        return {
+          pricingMode,
+          rounding,
+          soldOut: {
+            hideRecommendation: hideRec,
+            hideLatestChange: hideLatest
+          },
+          occupancyTiers: tiers,
+          leadTimeTiers: leadTimeTiers
+        };
+      },
+
+      render(RMS, draftRules = null){
+  const appliedRules = this.getRules();
+  const rules = draftRules ? this.normalizeRules(draftRules) : appliedRules;
+
+  // Mode UI (applied vs editing)
+  const appliedMode = appliedRules.pricingMode || "occ";
+  const editingMode = rules.pricingMode || "occ";
+  const pill = document.getElementById("activeModePill");
+  if (pill) pill.textContent = `Applied mode: ${this.getModeLabel(appliedMode)}`;
+
+  const modeNote = document.getElementById("modeNote");
+  if (modeNote) {
+    const extra = (editingMode !== appliedMode) ? ` • Editing: ${this.getModeLabel(editingMode)} (Save to apply)` : "";
+    let detail = "";
+    if (editingMode === "manual") {
+      detail = "Manual mode disables automatic recommendations.";
+    } else if (editingMode === "occ") {
+      detail = "Recommendations adjust price based on occupancy tiers only.";
+    } else {
+      detail = "Recommendations increase with both lead time (farther dates) and occupancy.";
+    }
+    modeNote.textContent = `${detail}${extra}`;
+  }
+
+  // Set radio selection
+  document.querySelectorAll('input[name="pricingMode"]').forEach((el) => {
+    if (!(el instanceof HTMLInputElement)) return;
+    el.checked = (el.value === editingMode);
+  });
+
+  // Enable/disable rule editing panels depending on mode
+  const tiersCard = document.getElementById("rulesTiersCard");
+  const behaviorCard = document.getElementById("rulesBehaviorCard");
+  const isManual = (editingMode === "manual");
+  tiersCard?.classList.toggle("rules-disabled", isManual);
+  behaviorCard?.classList.toggle("rules-disabled", isManual);
+
+  const leadCard = document.getElementById("rulesLeadCard");
+  const showLead = (editingMode === "occ_lead");
+  if (leadCard) leadCard.classList.toggle("hidden", !showLead);
+
+  // Update section labels to match the selected mode
+  const occTitle = document.getElementById("rulesOccTitle");
+  const occDesc = document.getElementById("rulesOccDesc");
+  if (occTitle) occTitle.textContent = (editingMode === "occ_lead")
+    ? "Occupancy adjustment tiers"
+    : "Occupancy-based recommendation tiers";
+  if (occDesc) occDesc.textContent = (editingMode === "occ_lead")
+    ? "Occupancy contributes an adjustment by tier. Combined with lead-time tiers below."
+    : "For the selected date and room type, the recommendation adjusts the current price by the tier percentage.";
+
+  // Lead-time tiers table
+  const ltBody = document.getElementById("rulesLeadTierBody");
+  if (ltBody) {
+    ltBody.innerHTML = (rules.leadTimeTiers || []).map((t, i) => `
+      <tr>
+        <td style="padding:10px 12px;"><input class="input" type="number" min="0" max="3650" data-idx="${i}" data-field="minDays" value="${t.minDays}" style="width:140px;"></td>
+        <td style="padding:10px 12px;"><input class="input" type="number" min="0" max="3650" data-idx="${i}" data-field="maxDays" value="${t.maxDays}" style="width:140px;"></td>
+        <td style="padding:10px 12px; display:flex; gap:10px; align-items:center;">
+          <input class="input" type="number" min="-100" max="100" step="1" data-idx="${i}" data-field="adjPct" value="${t.adjPct}" style="width:140px;">
+          <button class="button" data-action="delete-lead-tier" data-idx="${i}" style="padding:6px 10px;">Delete</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+        // Controls
+        const roundingEl = document.getElementById("ruleRounding");
+        if (roundingEl) roundingEl.value = String(rules.rounding);
+
+        const hideRec = document.getElementById("ruleSoldOutHideRec");
+        if (hideRec) hideRec.checked = !!rules.soldOut.hideRecommendation;
+
+        const hideLatest = document.getElementById("ruleSoldOutHideLatest");
+        if (hideLatest) hideLatest.checked = !!rules.soldOut.hideLatestChange;
+
+        // Tiers
+        const tbody = document.getElementById("rulesTierBody");
+        if (tbody) {
+          tbody.innerHTML = rules.occupancyTiers.map((t, i) => `
+            <tr>
+              <td><input class="input" type="number" min="0" max="100" step="1" data-idx="${i}" data-field="min" value="${t.min}" style="width:120px;"></td>
+              <td><input class="input" type="number" min="0" max="100" step="1" data-idx="${i}" data-field="max" value="${t.max}" style="width:120px;"></td>
+              <td style="display:flex; gap:10px; align-items:center;">
+                <input class="input" type="number" min="-100" max="100" step="0.5" data-idx="${i}" data-field="adjPct" value="${t.adjPct}" style="width:120px;">
+                <button class="button" data-action="delete-tier" data-idx="${i}" style="padding:6px 10px;">Delete</button>
+              </td>
+            </tr>
+          `).join("");
+
+          // bind delete buttons
+          tbody.querySelectorAll('button[data-action="delete-tier"]').forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.preventDefault();
+              const idx = Number(btn.getAttribute("data-idx"));
+              const cur = this.readFromUI();
+              if (!cur) return;
+              cur.occupancyTiers.splice(idx, 1);
+              this.render(RMS, cur);
+            });
+          });
+        }
+
+        // Log
+        const logEl = document.getElementById("rulesLog");
+        if (logEl) {
+          const log = this.getLog();
+          logEl.innerHTML = log.length ? log.map(l => `<div>${l.replace(/</g,"&lt;")}</div>`).join("") : `<div class="rms-muted">No changes yet.</div>`;
+        }
+      }
+    });
+
+RMS.registerModule("coreCalendar", {
+      init(RMS) {
+        // default: Feb 2024 / day 16
+        this.year = 2024;
+        this.monthIndex = 1;
+        this.monthName = "February";
+        RMS.state.selectedDay = 16;
+
+        RMS.state.selectedRoomType = "Ocean View Bungalow";
+        RMS.state.selectedRatePlan = "Flexible Rate";
+
+        this.bindEvents(RMS);
+      
+        this.bindPinnedControls(RMS);
+},
+
+      mondayIndex(jsDay){ return (jsDay + 6) % 7; },
+
+      formatDate(d){
+        return d.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric", year:"numeric" });
+      },
+
+      formatIDR(n){
+        return "IDR " + Number(n).toLocaleString("en-US");
+      },
+
+      getDateKey(day) {
+        return RMS.db.dateKey(this.year, this.monthIndex, day);
+      },
+
+      // occupancy% computed from inventory for selected room type
+      getOccPercent(day, roomType) {
+        const dk = this.getDateKey(day);
+        const inv = RMS.db.getInventory(dk, roomType);
+        if (!inv.total) return 0;
+        const occ = Math.round((1 - (inv.remaining / inv.total)) * 100);
+        return Math.max(0, Math.min(100, occ));
+      },
+
+      render(RMS){
+        const monthTitle = document.getElementById("monthTitle");
+        if(monthTitle) monthTitle.textContent = `${this.monthName} ${this.year}`;
+
+        // keep detailSub up to date
+        const sub = document.getElementById("detailSub");
+        if (sub) sub.textContent = `Showing: ${RMS.state.selectedRoomType} • ${RMS.state.selectedRatePlan}`;
+
+
+const applyBtn = document.getElementById("detailApply");
+if (applyBtn) {
+  const pm = RMS.pricing?.getRules?.()?.pricingMode || "occ";
+  applyBtn.disabled = (pm === "manual");
+  applyBtn.title = (pm === "manual") ? "Manual pricing mode: no recommendation to apply." : "";
+}
+
+        this.renderCalendarGrid(RMS);
+        this.renderTable(RMS);
+        this.applySelectedDay(RMS, RMS.state.selectedDay ?? 1);
+      },
+
+      renderCalendarGrid(RMS){
+        const grid = document.getElementById("calendarGrid");
+        if(!grid) return;
+
+        const firstDay = new Date(this.year, this.monthIndex, 1);
+        const daysInMonth = new Date(this.year, this.monthIndex + 1, 0).getDate();
+        const leadBlanks = this.mondayIndex(firstDay.getDay());
+
+        const roomType = RMS.state.selectedRoomType;
+        const ratePlan = RMS.state.selectedRatePlan;
+
+        const cellHTML = (dayNumber, isMuted=false) => {
+          if(isMuted) return `<div class="day muted" aria-hidden="true"></div>`;
+
+          const dk = this.getDateKey(dayNumber);
+          const price = RMS.db.getPrice(dk, roomType, ratePlan);
+          const inv = RMS.db.getInventory(dk, roomType);
+          const soldOut = inv.remaining <= 0;
+
+          const occ = this.getOccPercent(dayNumber, roomType);
+
+          return `
+            <div class="day" role="button" tabindex="0" data-day="${dayNumber}">
+              <div class="occfill" style="height:${occ}%;"></div>
+              <div class="day-content">
+                <div class="daynum">${dayNumber}</div>
+                <div class="occ">${occ}% • ${inv.remaining}/${inv.total} left</div>
+                ${soldOut ? (()=>{ const ls = RMS.db.getLastSoldPrice(dk, roomType, ratePlan); return `<div class="soldout">Sold out</div>${ls ? `<div class="footer-note" style="margin-top:4px;">Last sold: ${this.formatIDR(ls)}</div>` : ``}`; })() : `<div class="price">${this.formatIDR(price)}</div>`}
+              </div>
+            </div>
+          `;
+        };
+
+        grid.innerHTML = "";
+        for(let i=0;i<leadBlanks;i++) grid.insertAdjacentHTML("beforeend", cellHTML(null,true));
+        for(let d=1; d<=daysInMonth; d++) grid.insertAdjacentHTML("beforeend", cellHTML(d,false));
+        const total = leadBlanks + daysInMonth;
+        const trailing = (7 - (total % 7)) % 7;
+        for(let i=0;i<trailing;i++) grid.insertAdjacentHTML("beforeend", cellHTML(null,true));
+      },
+
+      renderTable(RMS){
+        const tbody = document.getElementById("roomTableBody");
+        const thead = document.getElementById("roomTableHead");
+        if(!tbody) return;
+
+        const day = RMS.state.selectedDay ?? 1;
+        const dk = this.getDateKey(day);
+        const ratePlan = RMS.state.selectedRatePlan;
+        const selectedRoom = RMS.state.selectedRoomType;
+
+        const otherPlans = RMS.db.data.ratePlans.filter(p => p !== ratePlan);
+
+        if (thead) {
+          const otherHead = otherPlans.map(p => `<th data-col="plan-${p}">${p} price</th>`).join("");
+          thead.innerHTML = `
+            <tr>
+              <th data-col="room">Room type</th>
+              <th data-col="avail">Availability change (last 24 hours)</th>
+              <th data-col="latest">Latest price change (${ratePlan})</th>
+              <th data-col="rec">Price recommendation (${ratePlan})</th>
+${otherHead}
+            </tr>
+          `;
+        }
+
+
+        const recommend = (current, occPercent, dateKey) => RMS.pricing?.recommendPrice?.(current, occPercent, dateKey);
+
+        tbody.innerHTML = "";
+
+        RMS.db.data.roomTypes.forEach((room) => {
+          const isFocused = (room === selectedRoom);
+
+          const inv = RMS.db.getInventory(dk, room);
+          const prevRemaining = Math.min(inv.total, Math.max(0, inv.remaining - inv.delta24h));
+          const availHTML = `<span style="color:#6b7280;">${prevRemaining}</span> → <strong>${inv.remaining}</strong> <span style="color:#6b7280;">(of ${inv.total})</span>`;
+
+          const sold = inv.remaining <= 0;
+
+          const latest = RMS.db.getLatestChange(dk, room, ratePlan);
+          const hideLatestWhenSoldOut = !!(RMS.pricing?.getRules?.()?.soldOut?.hideLatestChange);
+          let latestHTML = "";
+          if (sold && hideLatestWhenSoldOut) {
+            latestHTML = `<span style="color:#9ca3af; font-style:italic;">Sold out</span>`;
+          } else if (latest.old == null || latest.now == null) {
+            latestHTML = `<span style="color:#9ca3af;">—</span><div class="footer-note" style="margin-top:2px;">${latest.when}</div>`;
+          } else {
+            latestHTML = `
+              <span style="color:#6b7280;">${this.formatIDR(latest.old)}</span> → <strong>${this.formatIDR(latest.now)}</strong>
+              <div class="footer-note" style="margin-top:2px;">${latest.when}</div>
+            `;
+          }
+
+          const current = sold ? null : RMS.db.getPrice(dk, room, ratePlan);
+          const occP = this.getOccPercent(day, room);
+          const rec = sold ? null : recommend(current, occP);
+          const mode = RMS.db.getPriceMode(dk, room, ratePlan);
+
+          const hideRecWhenSoldOut = !!(RMS.pricing?.getRules?.()?.soldOut?.hideRecommendation);
+          const pricingMode = RMS.pricing?.getRules?.()?.pricingMode || "occ";
+
+          let recHTML = "";
+          if (sold && hideRecWhenSoldOut) {
+            recHTML = `<span style="color:#9ca3af; font-style:italic;">Sold out (no recommendation)</span>`;
+          } else if (sold) {
+            const ls = RMS.db.getLastSoldPrice(dk, room, ratePlan);
+            recHTML = (ls == null)
+              ? `<span style="color:#9ca3af;">—</span>`
+              : `
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                  <div style="color:#6b7280; font-weight:800;">${this.formatIDR(ls)}</div>
+                  <div class="footer-note" style="margin-top:0;">Last sold (${ratePlan})</div>
+                </div>
+              `;
+          } else if (pricingMode === "manual") {
+            recHTML = `<span style="color:#6b7280; font-style:italic;">Manual pricing mode (no recommendation)</span>`;
+          } else if (rec == null || current == null) {
+            recHTML = `<span style="color:#9ca3af;">—</span>`;
+          } else if (rec === current) {
+            recHTML = `<span style="color:#6b7280; font-style:italic;">You are up to date</span>`;
+          } else {
+            const direction = (rec > current) ? "Increase to" : "Decrease to";
+            const diffPct = Math.round(((rec - current) / current) * 100);
+            recHTML = `
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <div style="font-weight:800;">${direction} ${this.formatIDR(rec)}</div>
+                <div class="footer-note" style="margin-top:0;">
+                  ${diffPct > 0 ? "+" : ""}${diffPct}% • ${mode}
+                </div>
+              </div>
+            `;
+          }
+          const otherCellsHTML = otherPlans.map((p) => {
+            const soldOut = inv.remaining <= 0;
+            let pNow = soldOut ? null : RMS.db.getPrice(dk, room, p);
+            if (pNow == null) {
+              const ls = RMS.db.getLastSoldPrice(dk, room, p);
+              if (ls != null) {
+                return `
+                  <td data-col="plan-${p}">
+                    <div class="price" style="color:#6b7280;">
+                      ${this.formatIDR(ls)}
+                      <div class="footer-note" style="margin-top:2px;">Last sold</div>
+                    </div>
+                  </td>
+                `;
+              }
+              return `<td data-col="plan-${p}"><span style="color:#9ca3af;">—</span></td>`;
+            }
+            return `
+              <td data-col="plan-${p}">
+                <div class="price">${this.formatIDR(pNow)}</div>
+              </td>
+            `;
+          }).join("");
+
+
+          tbody.insertAdjacentHTML("beforeend", `
+            <tr class="${isFocused ? 'row-focused' : ''}">
+              <td data-col="room">
+                <strong>${room}</strong>
+                ${isFocused ? ' <span style="color:#1d4ed8; font-size:12px; font-weight:600;">(Selected)</span>' : ""}
+                <div class="footer-note" style="margin-top:4px;">Mode: ${mode}</div>
+              </td>
+              <td data-col="avail">${availHTML}</td>
+              <td data-col="latest">${latestHTML}</td>
+              <td data-col="rec">${recHTML}</td>
+${otherCellsHTML}
+            </tr>
+          `);
+        });
+
+        this.autoSizeDetailColumns(RMS);
+        this.applyPinnedColumns(RMS);
+      },
+
+
+      autoSizeDetailColumns(RMS){
+        const wrap = document.getElementById("detailTableWrap");
+        if(!wrap) return;
+        const table = wrap.querySelector("table");
+        if(!table) return;
+
+        const headRow = table.querySelector("thead tr");
+        if(!headRow) return;
+        const headers = Array.from(headRow.children);
+        if(headers.length === 0) return;
+
+        // Create/refresh <colgroup> so we can control column widths precisely
+        let colgroup = table.querySelector("colgroup");
+        if(!colgroup){
+          colgroup = document.createElement("colgroup");
+          table.insertBefore(colgroup, table.firstChild);
+        }
+        colgroup.innerHTML = headers.map(() => "<col>").join("");
+        const cols = Array.from(colgroup.children);
+
+        // Measure a sample of rows for performance
+        const sampleRows = Array.from(table.querySelectorAll("tbody tr")).slice(0, 14);
+
+        // Fixed layout so col widths are respected
+        table.style.tableLayout = "fixed";
+
+        headers.forEach((th, idx) => {
+          const key = th.getAttribute("data-col") || "";
+          let maxW = th.scrollWidth;
+
+          sampleRows.forEach((tr) => {
+            const cell = tr.children[idx];
+            if(cell) maxW = Math.max(maxW, cell.scrollWidth);
+          });
+
+          // Padding + sane min/max by column type
+          let padding = 28;
+          let min = 120;
+          let cap = 520;
+
+          if(key === "room"){ min = 220; cap = 560; }
+          else if(key === "avail"){ min = 200; cap = 420; }
+          else if(key === "latest"){ min = 220; cap = 540; }
+          else if(key === "rec"){ min = 240; cap = 560; }
+          else if(key.startsWith("plan-")){ min = 180; cap = 420; }
+
+          const w = Math.min(cap, Math.max(min, Math.ceil(maxW + padding)));
+          cols[idx].style.width = w + "px";
+        });
+      },
+
+      bindPinnedControls(RMS){
+        const ids = ["room","avail","latest","rec"];
+        ids.forEach((key) => {
+          const el = document.getElementById(`pin_${key}`);
+          if(!el) return;
+          el.addEventListener("change", () => this.applyPinnedColumns(RMS));
+        });
+      },
+
+      applyPinnedColumns(RMS){
+        const wrap = document.getElementById("detailTableWrap");
+        if(!wrap) return;
+        const table = wrap.querySelector("table");
+        if(!table) return;
+
+        // Reset
+        table.querySelectorAll("[data-col]").forEach((el) => {
+          el.classList.remove("sticky-cell","sticky-shadow");
+          el.style.left = "";
+        });
+
+        const order = ["room","avail","latest","rec"];
+        const pinned = order.filter((key) => {
+          const cb = document.getElementById(`pin_${key}`);
+          return cb ? cb.checked : false;
+        });
+
+        let left = 0;
+        pinned.forEach((key, idx) => {
+          const header = table.querySelector(`thead [data-col="${key}"]`);
+          const w = header ? header.getBoundingClientRect().width : 0;
+
+          const cells = table.querySelectorAll(`[data-col="${key}"]`);
+          cells.forEach((el) => {
+            el.classList.add("sticky-cell");
+            el.style.left = `${left}px`;
+          });
+
+          left += w;
+
+          if(idx === pinned.length - 1){
+            cells.forEach((el) => el.classList.add("sticky-shadow"));
+          }
+        });
+      },
+
+      applySelectedDay(RMS, d){
+        RMS.state.selectedDay = d;
+
+        document.querySelectorAll(".day").forEach(c=>c.classList.remove("selected"));
+        const target = document.querySelector(`.day[data-day="${d}"]`);
+        if(target) target.classList.add("selected");
+
+        const detailDate = document.getElementById("detailDate");
+        if(detailDate) detailDate.textContent = this.formatDate(new Date(this.year, this.monthIndex, d));
+
+        // Disable Apply when selected room is sold out
+        const dk = this.getDateKey(d);
+        const inv = RMS.db.getInventory(dk, RMS.state.selectedRoomType);
+        const sold = inv.remaining <= 0;
+
+        const applyBtn = document.getElementById("detailApply");
+        if(applyBtn){
+          applyBtn.disabled = !!sold;
+          applyBtn.style.opacity = sold ? "0.55" : "1";
+          applyBtn.style.cursor = sold ? "not-allowed" : "pointer";
+        }
+      },
+
+      bindEvents(RMS){
+        const grid = document.getElementById("calendarGrid");
+
+        if(grid){
+          grid.addEventListener("click", (e)=>{
+            const cell = e.target.closest(".day");
+            if(!cell || cell.classList.contains("muted")) return;
+            const d = Number(cell.dataset.day);
+            if(!Number.isFinite(d)) return;
+            this.applySelectedDay(RMS, d);
+            this.renderTable(RMS);
+          });
+
+          grid.addEventListener("keydown", (e)=>{
+            if(e.key !== "Enter" && e.key !== " ") return;
+            const cell = e.target.closest(".day");
+            if(!cell || cell.classList.contains("muted")) return;
+            const d = Number(cell.dataset.day);
+            if(!Number.isFinite(d)) return;
+            this.applySelectedDay(RMS, d);
+            this.renderTable(RMS);
+          });
+        }
+
+        document.getElementById("roomTypeSelect")?.addEventListener("change", ()=>{
+          RMS.state.selectedRoomType = document.getElementById("roomTypeSelect").value;
+          this.applySelectedDay(RMS, RMS.state.selectedDay);
+          renderAll();
+        });
+
+        document.getElementById("ratePlanSelect")?.addEventListener("change", ()=>{
+          RMS.state.selectedRatePlan = document.getElementById("ratePlanSelect").value;
+          renderAll();
+        });
+      }
+    });
+
+    /* =========================================================
+       MODULE: MONTH SWITCHER (3 months: Jan/Feb/Mar 2024)
+    ========================================================== */
+    RMS.registerModule("monthSwitcher3", {
+      init(RMS) {
+        const cal = RMS.modules.coreCalendar;
+        if (!cal) return;
+
+        const months = [
+          { year: 2024, monthIndex: 0, monthName: "January" },
+          { year: 2024, monthIndex: 1, monthName: "February" },
+          { year: 2024, monthIndex: 2, monthName: "March" }
+        ];
+
+        RMS.state._monthCursor3 = (RMS.state._monthCursor3 ?? 1);
+
+        const applyMonth = (cursor) => {
+          const m = months[cursor];
+          cal.year = m.year;
+          cal.monthIndex = m.monthIndex;
+          cal.monthName = m.monthName;
+
+          const daysInMonth = new Date(cal.year, cal.monthIndex + 1, 0).getDate();
+          if ((RMS.state.selectedDay || 1) > daysInMonth) RMS.state.selectedDay = daysInMonth;
+        };
+
+        const resetBtn = (id) => {
+          const old = document.getElementById(id);
+          if (!old) return null;
+          const neu = old.cloneNode(true);
+          old.parentNode.replaceChild(neu, old);
+          return neu;
+        };
+
+        const prevBtn = resetBtn("prevMonth");
+        const nextBtn = resetBtn("nextMonth");
+        const todayBtn = resetBtn("btnToday");
+
+        const go = (delta) => {
+          let c = RMS.state._monthCursor3;
+          c = Math.max(0, Math.min(2, c + delta));
+          RMS.state._monthCursor3 = c;
+          applyMonth(c);
+          renderAll();
+          RMS.ui?.toast?.(`${months[c].monthName} ${months[c].year}`, { title: "Month" });
+        };
+
+        prevBtn?.addEventListener("click", () => go(-1));
+        nextBtn?.addEventListener("click", () => go(+1));
+        todayBtn?.addEventListener("click", () => {
+          RMS.state._monthCursor3 = 1;
+          applyMonth(1);
+          RMS.state.selectedDay = 16;
+          renderAll();
+          RMS.ui?.toast?.("Back to Feb 16, 2024", { title: "Today" });
+        });
+
+        applyMonth(RMS.state._monthCursor3);
+      }
+    });
+
+    /* =========================================================
+       MODULE: MANUAL PRICE EDITOR (DB-backed)
+       - edits price for selected date × selected room × selected rate plan
+       - supports "Clear override" (reset to auto computed price)
+    ========================================================== */
+    RMS.registerModule("manualPriceEditorDB", {
+      init(RMS) {
+        const cal = RMS.modules.coreCalendar;
+        if (!cal) return;
+
+        const resetBtn = (id) => {
+          const old = document.getElementById(id);
+          if (!old) return null;
+          const neu = old.cloneNode(true);
+          old.parentNode.replaceChild(neu, old);
+          return neu;
+        };
+
+        const btnTop = resetBtn("btnManualPrices");
+        const btnDetail = resetBtn("detailManual");
+
+        const parseIDR = (raw) => {
+          const cleaned = String(raw || "").replace(/idr/ig, "").replace(/[^\d]/g, "");
+          if (!cleaned) return null;
+          const n = Number(cleaned);
+          return Number.isFinite(n) ? n : null;
+        };
+
+        const openEditor = () => {
+          const day = RMS.state.selectedDay;
+          if (!day) { RMS.ui.toast("Please select a date first.", { title: "Manual price" }); return; }
+
+          const roomType = RMS.state.selectedRoomType;
+          const ratePlan = RMS.state.selectedRatePlan;
+          const dk = cal.getDateKey(day);
+
+          const inv = RMS.db.getInventory(dk, roomType);
+          if (inv.remaining <= 0) {
+            RMS.ui.toast("Selected room type is sold out on this date.", { title: "Manual price" });
+            return;
+          }
+
+          const current = RMS.db.getPrice(dk, roomType, ratePlan);
+
+          const bodyHTML = `
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div>
+                <div style="font-weight:800; font-size:14px;">${cal.formatDate(new Date(cal.year, cal.monthIndex, day))}</div>
+                <div class="rms-muted">Room type: <strong>${roomType}</strong></div>
+                <div class="rms-muted">Rate plan: <strong>${ratePlan}</strong></div>
+              </div>
+
+              <div>
+                <label for="rmsManualPriceInput" style="display:block; font-weight:700; font-size:13px; margin-bottom:6px;">
+                  Price (IDR)
+                </label>
+                <input
+                  id="rmsManualPriceInput"
+                  type="text"
+                  inputmode="numeric"
+                  placeholder="Example: 2,500,000"
+                  value="${current ? Number(current).toLocaleString("en-US") : ""}"
+                  style="width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px; outline:none;"
+                />
+                <div id="rmsManualPriceError" class="rms-muted" style="color:#b91c1c; margin-top:6px; display:none;"></div>
+                <div class="rms-muted" style="margin-top:6px;">
+                  Stored in DB at: <code>${dk}</code>
+                </div>
+              </div>
+            </div>
+          `;
+
+          const footerHTML = `
+            <button type="button" class="button secondary" id="rmsManualCancel">Cancel</button>
+            <button type="button" class="button secondary" id="rmsManualClear">Clear override</button>
+            <button type="button" class="button primary" id="rmsManualSave">Save</button>
+          `;
+
+          const { close } = RMS.ui.openModal({
+            title: "Manually set prices",
+            bodyHTML,
+            footerHTML
+          });
+
+          const input = document.getElementById("rmsManualPriceInput");
+          const err = document.getElementById("rmsManualPriceError");
+
+          const showErr = (msg) => { err.textContent = msg; err.style.display = "block"; };
+          const clearErr = () => { err.textContent = ""; err.style.display = "none"; };
+
+          input?.addEventListener("blur", () => {
+            const n = parseIDR(input.value);
+            if (n != null) input.value = n.toLocaleString("en-US");
+          });
+
+          const pushHistory = (action, oldPrice, newPrice) => {
+            RMS.state.history.unshift({
+              id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+              time: new Date().toLocaleString("en-US"),
+              action,
+              dateKey: dk,
+              day,
+              roomType,
+              ratePlan,
+              oldPrice,
+              newPrice
+            });
+          };
+
+          document.getElementById("rmsManualCancel")?.addEventListener("click", close);
+
+          document.getElementById("rmsManualClear")?.addEventListener("click", () => {
+            const before = RMS.db.getPrice(dk, roomType, ratePlan);
+            RMS.db.resetToAuto(dk, roomType, ratePlan);
+            const after = RMS.db.getPrice(dk, roomType, ratePlan);
+            pushHistory("Manual override cleared (reset to auto)", before, after);
+            renderAll();
+            RMS.ui.toast("Override cleared (back to auto).", { title: "Manual price" });
+            close();
+          });
+
+          document.getElementById("rmsManualSave")?.addEventListener("click", () => {
+            clearErr();
+            const n = parseIDR(input?.value);
+            if (n == null || n <= 0) { showErr("Please enter a valid number."); return; }
+
+            const before = RMS.db.getPrice(dk, roomType, ratePlan);
+            RMS.db.setPrice(dk, roomType, ratePlan, n, "manual");
+            pushHistory("Manual price set", before, n);
+
+            renderAll();
+            RMS.ui.toast(`Saved: ${cal.formatIDR(n)}`, { title: "Manual price" });
+            close();
+          });
+
+          input?.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") document.getElementById("rmsManualSave")?.click();
+          });
+        };
+
+        btnTop?.addEventListener("click", openEditor);
+        btnDetail?.addEventListener("click", openEditor);
+      }
+    });
+
+    /* =========================================================
+       MODULE: APPLY RECOMMENDATION + UNDO (DB-backed)
+    ========================================================== */
+    RMS.registerModule("applyWithUndoDB", {
+      init(RMS) {
+        const cal = RMS.modules.coreCalendar;
+        if (!cal) return;
+
+        const resetBtn = (id) => {
+          const old = document.getElementById(id);
+          if (!old) return null;
+          const neu = old.cloneNode(true);
+          old.parentNode.replaceChild(neu, old);
+          return neu;
+        };
+
+        const applyBtn = resetBtn("detailApply");
+
+        const recommend = (current, occPercent) => {
+          if (current == null) return null;
+          // Deterministic rule-based recommendation (no randomness):
+          // High occupancy => raise; Low occupancy => lower; Otherwise keep.
+          let adj = 0.0;
+          if (occPercent >= 85) adj = 0.06;
+          else if (occPercent >= 70) adj = 0.03;
+          else if (occPercent <= 35) adj = -0.05;
+          else if (occPercent <= 45) adj = -0.03;
+          else adj = 0.0;
+
+          const rec = current * (1 + adj);
+          return Math.round(rec / 5000) * 5000;
+        };
+
+        const undoLast = () => {
+          const last = RMS.state.undoStack.shift();
+          if (!last) {
+            RMS.ui.toast("Nothing to undo.", { title: "Undo" });
+            return;
+          }
+
+          const { dk, roomType, ratePlan, prevPrice, prevMode } = last;
+          RMS.db.setPrice(dk, roomType, ratePlan, prevPrice, prevMode);
+          renderAll();
+          RMS.ui.toast("Reverted.", { title: "Undo" });
+        };
+
+        applyBtn?.addEventListener("click", async () => {
+          const day = RMS.state.selectedDay;
+          if (!day) { RMS.ui.toast("Please select a date first.", { title: "Apply" }); return; }
+
+          const roomType = RMS.state.selectedRoomType;
+          const ratePlan = RMS.state.selectedRatePlan;
+          const dk = cal.getDateKey(day);
+
+          const inv = RMS.db.getInventory(dk, roomType);
+          if (inv.remaining <= 0) { RMS.ui.toast("Sold out. Nothing to apply.", { title: "Apply" }); return; }
+
+          const current = RMS.db.getPrice(dk, roomType, ratePlan);
+          const occP = cal.getOccPercent(day, roomType);
+          const pricingMode = RMS.pricing?.getRules?.()?.pricingMode || "occ";
+          if (pricingMode === "manual") { RMS.ui.toast("Manual pricing mode. No recommendation to apply.", { title: "Apply" }); return; }
+          const rec = recommend(current, occP, dk);
+
+
+          if (rec == null) { RMS.ui.toast("No price available to recommend.", { title: "Apply" }); return; }
+
+          const ok = await RMS.ui.confirm({
+            title: "Apply recommendation?",
+            message:
+              `${cal.formatDate(new Date(cal.year, cal.monthIndex, day))}\n` +
+              `${roomType} • ${ratePlan}\n\n` +
+              `Current: ${current ? cal.formatIDR(current) : "—"}\n` +
+              `Recommended: ${cal.formatIDR(rec)}\n\n` +
+              `This will write to the in-memory DB.`,
+            confirmText: "Apply",
+            cancelText: "Cancel"
+          });
+
+          if (!ok) return;
+
+          const prevPrice = current;
+          const prevMode = RMS.db.getPriceMode(dk, roomType, ratePlan);
+
+          // store undo snapshot
+          RMS.state.undoStack.unshift({ dk, roomType, ratePlan, prevPrice, prevMode });
+
+          RMS.db.setPrice(dk, roomType, ratePlan, rec, "applied");
+          RMS.state.history.unshift({
+            id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+            time: new Date().toLocaleString("en-US"),
+            action: "Apply recommendation",
+            dateKey: dk,
+            day,
+            roomType,
+            ratePlan,
+            oldPrice: prevPrice,
+            newPrice: rec
+          });
+
+          renderAll();
+
+          RMS.ui.toast(`Applied: ${cal.formatIDR(rec)}`, {
+            title: "Apply recommendation",
+            actionText: "Undo",
+            onAction: undoLast,
+            duration: 3200
+          });
+        });
+
+        // optional exposure
+        RMS.undo = RMS.undo || {};
+        RMS.undo.undoLast = undoLast;
+      }
+    });
+
+/* =========================================================
+       MODULE: KPI DASHBOARD + VIEW ROUTER
+       - Overview page shows Revenue / RevPAR / Occupancy / ADR
+       - Uses existing in-memory DB (prices + inventory)
+       - Does NOT modify calendar UI; just toggles views
+    ========================================================== */
+    RMS.registerModule("kpiDashboard", {
+      init(RMS){
+        const dashboardView = document.getElementById("dashboardView");
+        const calendarView = document.getElementById("calendarView");
+        const pricingRulesView = document.getElementById("pricingRulesView");
+        const sidebar = document.querySelector(".sidebar");
+
+        const show = (which) => {
+          const isDash = (which === "dashboard");
+          const isCal = (which === "calendar");
+          const isRules = (which === "rules");
+
+          if (sidebar) sidebar.style.display = isRules ? "none" : "";
+          if (dashboardView) dashboardView.classList.toggle("hidden", !isDash);
+          if (calendarView) calendarView.classList.toggle("hidden", !isCal);
+          if (pricingRulesView) pricingRulesView.classList.toggle("hidden", !isRules);
+          if (isRules) {
+            const pr = RMS.modules.pricingRules;
+            if (pr && typeof pr.render === "function") {
+              pr.render(RMS);
+            }
+          }
+
+          // IMPORTANT: coreCalendar renders on DOMContentLoaded even when the calendar view is hidden.
+          // When the view is hidden, column width measurements become 0, so pinned (sticky) columns
+          // won't activate until the user toggles a pin checkbox. Re-render once the calendar becomes
+          // visible to ensure widths + sticky offsets are computed correctly.
+          if (isCal) {
+            const cal = RMS.modules.coreCalendar;
+            if (cal && typeof cal.render === "function") {
+              requestAnimationFrame(() => {
+                cal.render(RMS);
+                requestAnimationFrame(() => cal.applyPinnedColumns?.(RMS));
+              });
+            }
+          } else if (isRules) {
+            const pr = RMS.modules.pricingRules;
+            pr?.render?.(RMS);
+          } else if (isDash) {
+            // Refresh KPIs when returning to Overview
+            this.render?.(RMS);
+          }
+        };
+
+        // default landing: dashboard
+        show("dashboard");
+
+                document.getElementById("btnGoRules")?.addEventListener("click", () => {
+          show("rules");
+          RMS.ui?.toast?.("Pricing rules", { title: "Navigation" });
+        });
+
+document.getElementById("btnGoCalendar")?.addEventListener("click", () => {
+          show("calendar");
+          RMS.ui?.toast?.("Calendar view", { title: "Navigation" });
+        });
+
+        document.getElementById("btnGoDashboard")?.addEventListener("click", () => {
+          show("dashboard");
+          RMS.ui?.toast?.("Overview", { title: "Navigation" });
+        });
+
+
+        
+        document.getElementById("btnPricingRules")?.addEventListener("click", () => {
+          show("rules");
+          RMS.ui?.toast?.("Pricing rules", { title: "Navigation" });
+        });
+
+        document.getElementById("detailRules")?.addEventListener("click", () => {
+          show("rules");
+          RMS.ui?.toast?.("Pricing rules", { title: "Navigation" });
+        });
+
+        document.getElementById("btnRulesBackCalendar")?.addEventListener("click", () => {
+          show("calendar");
+          RMS.ui?.toast?.("Calendar view", { title: "Navigation" });
+        });
+
+        document.getElementById("btnRulesBackOverview")?.addEventListener("click", () => {
+          show("dashboard");
+          RMS.ui?.toast?.("Overview", { title: "Navigation" });
+        });
+
+// KPI range toggle (Overview only)
+        this._range = "month";
+        const setRange = (r) => {
+          this._range = r;
+          document.querySelectorAll("#kpiRangeGroup .toggle").forEach((b) => {
+            b.classList.toggle("active", b.dataset.range === r);
+          });
+          this.render(RMS);
+        };
+        document.querySelectorAll("#kpiRangeGroup .toggle").forEach((btn) => {
+          btn.addEventListener("click", () => setRange(btn.dataset.range));
+        });
+
+        this._show = show;
+      },
+
+      formatIDR(RMS, n){
+        const cal = RMS.modules.coreCalendar;
+        if (cal && typeof cal.formatIDR === "function") return cal.formatIDR(n);
+        return "IDR " + Number(n).toLocaleString("en-US");
+      },
+
+      computeRangeKPIs(RMS, range){
+        const cal = RMS.modules.coreCalendar;
+        if (!cal || !RMS.db) return null;
+
+        const inv = RMS.db.data?.inventory || {};
+        const allDates = Object.keys(inv).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
+        if (!allDates.length) return null;
+
+        const refDate = allDates[allDates.length - 1]; // YYYY-MM-DD
+        const [refY, refM] = refDate.split("-").map(Number);
+        const refQ = Math.floor((refM - 1) / 3) + 1;
+
+        const inRange = (dk) => {
+          const [y, m] = dk.split("-").map(Number);
+          const q = Math.floor((m - 1) / 3) + 1;
+          if (range === "day") return dk === refDate;
+          if (range === "month") return (y === refY && m === refM);
+          if (range === "quarter") return (y === refY && q === refQ);
+          return true;
+        };
+
+        const dateKeys = allDates.filter(inRange);
+
+        // We do not have booking-by-rate-plan mix in this prototype.
+        // To estimate realized revenue across *all* rate plans, we apply a simple plan mix.
+        const planMix = {
+          BAR: 0.65,
+          "Member Rate": 0.20,
+          "Corporate": 0.10,
+          "Promotion": 0.05
+        };
+
+        let revenue = 0;
+        let soldRooms = 0;
+        let availableRooms = 0;
+
+        dateKeys.forEach((dk) => {
+          RMS.db.data.roomTypes.forEach((room) => {
+            const invRow = RMS.db.getInventory(dk, room);
+            const total = invRow.total || 0;
+            const remaining = invRow.remaining || 0;
+            const sold = Math.max(0, total - remaining);
+
+            availableRooms += total;
+            soldRooms += sold;
+
+            if (sold <= 0) return;
+
+            let weightedPrice = 0;
+            let wSum = 0;
+
+            Object.keys(planMix).forEach((plan) => {
+              const w = planMix[plan] || 0;
+              let p = RMS.db.getPrice(dk, room, plan);
+              if (p == null) p = RMS.db.getLastSoldPrice(dk, room, plan);
+              if (p == null) return;
+              weightedPrice += w * p;
+              wSum += w;
+            });
+
+            let realized = (wSum > 0) ? (weightedPrice / wSum) : null;
+
+            if (realized == null) {
+              for (const plan of RMS.db.data.ratePlans) {
+                let p = RMS.db.getPrice(dk, room, plan);
+                if (p == null) p = RMS.db.getLastSoldPrice(dk, room, plan);
+                if (p != null) { realized = p; break; }
+              }
+            }
+
+            if (realized != null) revenue += sold * realized;
+          });
+        });
+
+        const occ = (availableRooms > 0) ? (soldRooms / availableRooms) : 0;
+        const adr = (soldRooms > 0) ? (revenue / soldRooms) : 0;
+        const revpar = (availableRooms > 0) ? (revenue / availableRooms) : 0;
+
+        return { range, refDate, refY, refM, refQ, revenue, soldRooms, availableRooms, occ, adr, revpar };
+      },
+
+      render(RMS){
+        const range = this._range || "month";
+        const k = this.computeRangeKPIs(RMS, range);
+        if (!k) return;
+
+        const setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+
+        // Primary values
+        setText("kpiRevenue", this.formatIDR(RMS, Math.round(k.revenue)));
+        setText("kpiRevPAR", this.formatIDR(RMS, Math.round(k.revpar)));
+        setText("kpiOcc", `${Math.round(k.occ * 100)}%`);
+        setText("kpiADR", this.formatIDR(RMS, Math.round(k.adr)));
+
+        // Header description + reference date
+        const desc = document.getElementById("kpiRangeDesc");
+        if (desc){
+          if (range === "day") desc.textContent = "Property-level KPIs for today";
+          if (range === "month") desc.textContent = "Property-level KPIs for this month";
+          if (range === "quarter") desc.textContent = "Property-level KPIs for this quarter";
+        }
+        setText("kpiRefDateLabel", `(Reference date: ${k.refDate})`);
+
+        // Sub lines (Chinese range label)
+        const rangeLabel = (range === "day") ? "Today" : (range === "month") ? "This month" : "This quarter";
+        const monthName = ["January","February","March","April","May","June","July","August","September","October","November","December"][k.refM - 1];
+        const quarterLabel = `Q${k.refQ} ${k.refY}`;
+
+        if (range === "day") setText("kpiRevenueSub", `${rangeLabel} • ${k.refDate} • All rate plans`);
+        if (range === "month") setText("kpiRevenueSub", `${rangeLabel} • ${monthName} ${k.refY} • All rate plans`);
+        if (range === "quarter") setText("kpiRevenueSub", `${rangeLabel} • ${quarterLabel} • All rate plans`);
+
+        setText("kpiRevPARSub", `Revenue / available rooms (${k.availableRooms.toLocaleString("en-US")} room-nights)`);
+        setText("kpiOccSub", `${k.soldRooms.toLocaleString("en-US")} sold / ${k.availableRooms.toLocaleString("en-US")} available`);
+        setText("kpiADRSub", `Revenue / sold rooms (${k.soldRooms.toLocaleString("en-US")} room-nights)`);
+      }
+    });
+
+
+    /* =========================================================
+       BOOTSTRAP
+    ========================================================== */
+    document.addEventListener("DOMContentLoaded", () => {
+      renderAll();
+    });
+  </script>
+</body>
+</html>
