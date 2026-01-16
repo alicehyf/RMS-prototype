@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>RMS – Revenue Management</title>
+<link rel="stylesheet" href="rms.css">
+</head>
+<body>
+<div class="topbar">
+  <div class="tb-left">
+    <button class="tb-app" type="button" title="Apps">
+      <span class="grid"><span></span><span></span><span></span><span></span></span>
+    </button>
+    <div class="tb-property" title="Property">
+      <select id="propertySelect" class="tb-property-select" aria-label="Property"></select>
+      <span class="chev">▾</span>
+    </div>
+  </div>
+
+  <div class="tb-search">
+    <span class="icon">🔍</span>
+    <input id="globalSearch" type="text" placeholder="Search" />
+  </div>
+
+  <div class="tb-right">
+    <button class="tb-icon" type="button" title="Tasks">📋</button>
+    <button class="tb-icon" type="button" title="Settings">⚙️</button>
+    <button class="tb-icon" type="button" title="Help">?</button>
+        <button class="tb-icon" type="button" id="btnTogglePortfolio" title="Portfolio snapshot">📊</button>
+<div class="tb-avatar" title="User">HY</div>
+  </div>
+</div>
+<div class="layout">
+<aside class="sidebar prostay" id="leftMenu" aria-label="Primary">
+  <div class="sb-mini">
+    <button class="sb-hamburger" type="button" id="sbCollapseBtn" title="Menu">
+      <span class="hamburger-lines" aria-hidden="true"></span>
+    </button>
+    <div class="sb-group-label">Property Management</div>
+  </div>
+
+  <nav class="sb-nav" aria-label="Menu">
+    <button class="sb-item active" data-nav="dashboard" type="button">
+      <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-7H10v7H5a1 1 0 0 1-1-1v-9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <span class="sb-text">Dashboard</span>
+    </button>
+
+    <button class="sb-item disabled" type="button">
+      <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <span class="sb-text">Communication</span>
+      <span class="sb-caret" aria-hidden="true">▾</span>
+    </button>
+
+    <button class="sb-item disabled" type="button">
+      <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 7h10M7 12h10M7 17h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M5 4h14a2 2 0 0 1 2 2v14l-4-2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <span class="sb-text">Reservations</span>
+      <span class="sb-caret" aria-hidden="true">▾</span>
+    </button>
+
+    <button class="sb-item disabled" type="button">
+      <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M16 11c1.7 0 3-1.3 3-3S17.7 5 16 5s-3 1.3-3 3 1.3 3 3 3zM8 11c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3z" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M2 20c.6-3 3.2-5 6-5M22 20c-.6-3-3.2-5-6-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M8 15c1-1 2.4-1.6 4-1.6s3 .6 4 1.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="sb-text">Guests</span>
+      <span class="sb-caret" aria-hidden="true">▾</span>
+    </button>
+
+    <button class="sb-item disabled" type="button">
+      <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M18 16v6M15 19h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="sb-text">Booking Sources</span>
+      <span class="sb-caret" aria-hidden="true">▾</span>
+    </button>
+
+    <button class="sb-item disabled" type="button">
+      <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 19h16M6 17V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M9 11h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="sb-text">Housekeeping</span>
+      <span class="sb-caret" aria-hidden="true">▾</span>
+    </button>
+
+    <button class="sb-item sb-parent open" type="button" id="rmsToggle" aria-expanded="true">
+      <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="sb-text">RMS</span>
+      <span class="sb-caret" aria-hidden="true">▾</span>
+    </button>
+
+    <div class="sb-submenu open" id="rmsSubmenu" role="group" aria-label="RMS">
+      <button class="sb-subitem" data-nav="overview" type="button">
+        <span class="sb-subtext">Overview</span>
+      </button>
+      <button class="sb-subitem" data-nav="forecast" type="button">
+        <span class="sb-subtext">Forecast</span>
+      </button>
+      <button class="sb-subitem" data-nav="autopilot" type="button">
+        <span class="sb-subtext">Autopilot</span>
+      </button>
+      <button class="sb-subitem" data-nav="calendar" type="button">
+        <span class="sb-subtext">Calendar</span>
+      </button>
+      <button class="sb-subitem" data-nav="rules" type="button">
+        <span class="sb-subtext">Pricing rules</span>
+      </button>
+      <button class="sb-subitem" data-nav="restrictions" type="button">
+        <span class="sb-subtext">Pricing restrictions</span>
+      </button>
+    </div>
+
+    <button class="sb-item sb-parent" type="button" id="ratesToggle" aria-expanded="false">
+      <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 19V5M4 19h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M7 15l4-4 3 3 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="sb-text">Rates &amp; Availability</span>
+      <span class="sb-caret" aria-hidden="true">▾</span>
+    </button>
+
+    <div class="sb-submenu" id="ratesSubmenu" role="group" aria-label="Rates & Availability">
+      <button class="sb-subitem disabled" type="button">
+        <span class="sb-subtext">Base Rates</span>
+      </button>
+      <button class="sb-subitem disabled" type="button">
+        <span class="sb-subtext">Rate Plans &amp; Packages</span>
+      </button>
+      <button class="sb-subitem disabled" type="button">
+        <span class="sb-subtext">Availability Matrix</span>
+      </button>
+    </div>
+
+    <button class="sb-item disabled" type="button">
+      <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 19V5M4 19h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M8 14v-4M12 14V8M16 14V6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="sb-text">Reports</span>
+      <span class="sb-caret" aria-hidden="true">▾</span>
+    </button>
+
+    <button class="sb-item disabled" type="button">
+      <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 7h10v10H7z" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M4 12h3M17 12h3M12 4v3M12 17v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="sb-text">Integrations</span>
+      <span class="sb-caret" aria-hidden="true">▾</span>
+    </button>
+
+    <div class="sb-spacer"></div>
+
+    <button class="sb-item sb-parent" type="button" id="settingsToggle" aria-expanded="false">
+      <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7z" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M19.4 15a7.9 7.9 0 0 0 .1-6l2-1.2-2-3.4-2.3 1a8 8 0 0 0-5-2L9.8 1H14l-1.2 2.4a8 8 0 0 0-5 2l-2.3-1-2 3.4L5.6 9a7.9 7.9 0 0 0 .1 6L3.7 16.2l2 3.4 2.3-1a8 8 0 0 0 5 2L12 23l1.1-2.4a8 8 0 0 0 5-2l2.3 1 2-3.4L19.4 15z" opacity=".15" fill="currentColor"/>
+      </svg>
+      <span class="sb-text">Settings</span>
+      <span class="sb-caret" aria-hidden="true">▾</span>
+    </button>
+
+    <div class="sb-submenu" id="settingsSubmenu" role="group" aria-label="Settings">
+      <button class="sb-subitem" data-nav="properties" type="button"><span class="sb-subtext">Properties</span></button>
+      <button class="sb-subitem disabled" type="button"><span class="sb-subtext">General</span></button>
+      <button class="sb-subitem disabled" type="button"><span class="sb-subtext">Users &amp; permissions</span></button>
+      <button class="sb-subitem disabled" type="button"><span class="sb-subtext">Data sources</span></button>
+    </div>
+  </nav>
+</aside>
+<div class="content">
+<div id="dashboardView">
+<div class="card">
+<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+<div>
+<h1 style="margin:0;">Dashboard</h1>
+<div class="rms-muted" style="margin-top:6px;">
+<span id="kpiRangeDesc">Property-level KPIs for this month</span> <span class="rms-muted" id="kpiRefDateLabel"></span>
+</div>
+</div>
+<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+<div id="kpiRangeGroup" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+<button class="button toggle" data-range="day" id="rangeDay">Today</button>
+<button class="button toggle active" data-range="month" id="rangeMonth">This month</button>
+<button class="button toggle" data-range="quarter" id="rangeQuarter">This quarter</button>
+</div>
+<button class="button secondary" id="btnGoRules">Pricing rules</button>
+<button class="button primary" id="btnGoCalendar">Open calendar</button>
+</div>
+</div>
+<div class="kpi-grid" style="margin-top:16px;">
+<div class="kpi-card">
+  <div class="kpi-label">Revenue</div>
+  <div class="kpi-value" id="kpiRevenue">—</div>
+  <div class="kpi-delta" id="kpiRevenueDelta">—</div>
+  <div class="kpi-sub" id="kpiRevenueSub">—</div>
+  <div class="kpi-viz">
+    <svg class="spark" id="sparkRevenue" viewBox="0 0 100 30" preserveAspectRatio="none" aria-label="Revenue trend"></svg>
+    <div class="mini-bars" id="barRevenue"></div>
+  </div>
+</div>
+<div class="kpi-card">
+  <div class="kpi-label">RevPAR</div>
+  <div class="kpi-value" id="kpiRevPAR">—</div>
+  <div class="kpi-delta" id="kpiRevPARDelta">—</div>
+  <div class="kpi-sub" id="kpiRevPARSub">—</div>
+  <div class="kpi-viz">
+    <svg class="spark" id="sparkRevPAR" viewBox="0 0 100 30" preserveAspectRatio="none" aria-label="RevPAR trend"></svg>
+    <div class="mini-bars" id="barRevPAR"></div>
+  </div>
+</div>
+<div class="kpi-card">
+  <div class="kpi-label">Occupancy</div>
+  <div class="kpi-value" id="kpiOcc">—</div>
+  <div class="kpi-delta" id="kpiOccDelta">—</div>
+  <div class="kpi-sub" id="kpiOccSub">—</div>
+  <div class="kpi-viz">
+    <svg class="spark" id="sparkOcc" viewBox="0 0 100 30" preserveAspectRatio="none" aria-label="Occupancy trend"></svg>
+    <div class="mini-bars" id="barOcc"></div>
+  </div>
+</div>
+<div class="kpi-card">
+  <div class="kpi-label">ADR</div>
+  <div class="kpi-value" id="kpiADR">—</div>
+  <div class="kpi-delta" id="kpiADRDelta">—</div>
+  <div class="kpi-sub" id="kpiADRSub">—</div>
+  <div class="kpi-viz">
+    <svg class="spark" id="sparkADR" viewBox="0 0 100 30" preserveAspectRatio="none" aria-label="ADR trend"></svg>
+    <div class="mini-bars" id="barADR"></div>
+  </div>
+</div>
+</div>
+
+<div class="overview-extra">
+  <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+    <div>
+      <div style="font-weight:700;">Trends & comparison</div>
+      <div class="rms-muted" id="compareLabel" style="margin-top:4px;">Comparing to the previous period</div>
+    </div>
+  </div>
+
+  <div class="overview-extra-grid">
+    <div class="mini-chart-card">
+      <div class="mini-chart-title">Revenue (daily)</div>
+      <svg class="mini-chart" id="chartRevenue" viewBox="0 0 300 90" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="mini-chart-card">
+      <div class="mini-chart-title">RevPAR (daily)</div>
+      <svg class="mini-chart" id="chartRevPAR" viewBox="0 0 300 90" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="mini-chart-card">
+      <div class="mini-chart-title">Occupancy (daily)</div>
+      <svg class="mini-chart" id="chartOcc" viewBox="0 0 300 90" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="mini-chart-card">
+      <div class="mini-chart-title">ADR (daily)</div>
+      <svg class="mini-chart" id="chartADR" viewBox="0 0 300 90" preserveAspectRatio="none"></svg>
+    </div>
+  </div>
+
+  <table class="compare-table" aria-label="Current vs previous period comparison">
+    <thead>
+      <tr>
+        <th style="width:22%;">Metric</th>
+        <th>Current</th>
+        <th>Previous</th>
+        <th>Change</th>
+      </tr>
+    </thead>
+    <tbody id="compareTableBody">
+      <tr><td>Revenue</td><td id="cmpRevenueCur">—</td><td id="cmpRevenuePrev">—</td><td id="cmpRevenueDelta">—</td></tr>
+      <tr><td>RevPAR</td><td id="cmpRevPARCur">—</td><td id="cmpRevPARPrev">—</td><td id="cmpRevPARDelta">—</td></tr>
+      <tr><td>Occupancy</td><td id="cmpOccCur">—</td><td id="cmpOccPrev">—</td><td id="cmpOccDelta">—</td></tr>
+      <tr><td>ADR</td><td id="cmpADRCur">—</td><td id="cmpADRPrev">—</td><td id="cmpADRDelta">—</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="footer-note">
+      Notes: Revenue is estimated from sold rooms × (plan-mix weighted price). ADR = Revenue / sold rooms. RevPAR = Revenue / available rooms.
+    </div>
+</div>
+</div>
+
+<div class="card" id="portfolioCard" style="margin-top:14px;">
+  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+    <div>
+      <div class="card-title">Portfolio snapshot</div>
+      <div class="rms-muted" style="margin-top:4px;">Quick comparison across properties. Click “Switch” to jump between properties.</div>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="button" id="btnGoProperties">Manage properties</button>
+      <button class="button" id="btnHidePortfolio">Hide</button>
+    </div>
+  </div>
+  <div class="table-wrap" style="margin-top:10px;">
+    <table class="mini-table" id="portfolioTable">
+      <thead>
+        <tr>
+          <th style="text-align:left;">Property</th>
+          <th style="text-align:right;">Occ (avg)</th>
+          <th style="text-align:right;">ADR</th>
+          <th style="text-align:right;">RevPAR</th>
+          <th style="text-align:right;">Revenue</th>
+          <th style="text-align:left;">Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="hidden" id="forecastView">
+  <div class="card">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <div>
+        <h1 style="margin:0;">Forecast &amp; Pace</h1>
+        <div class="rms-muted" style="margin-top:6px;">On-the-books demand, pickup pace, and a lightweight occupancy forecast for upcoming dates.</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <button class="button secondary" id="btnForecastGoCalendar">Open calendar</button>
+      </div>
+    </div>
+
+    <div class="forecast-controls" style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <div class="pill">
+        <span class="pill-label">As of</span>
+        <select id="forecastAsOf" class="select"></select>
+      </div>
+      <div class="pill">
+        <span class="pill-label">Room type</span>
+        <select id="forecastRoom" class="select">
+          <option value="__all__" selected>All rooms</option>
+        </select>
+      </div>
+      <div class="pill">
+        <span class="pill-label">Window</span>
+        <select id="forecastWindow" class="select">
+          <option value="14">Next 14 days</option>
+          <option value="30" selected>Next 30 days</option>
+          <option value="60">Next 60 days</option>
+        </select>
+      </div>
+      <div class="rms-muted" id="forecastRangeLabel" style="margin-left:auto;">—</div>
+    </div>
+
+    <div class="forecast-grid" style="margin-top:14px;">
+      <div class="mini-chart-card">
+        <div class="mini-chart-title">Rooms sold (OTB) vs forecast</div>
+        <div class="chart-legend" style="display:flex; gap:12px; align-items:center; margin:6px 0 8px 0; flex-wrap:wrap;">
+          <span class="legend-item"><span class="legend-dot"></span> Forecast</span>
+          <span class="legend-item" style="opacity:0.7;"><span class="legend-dot dashed"></span> OTB (current)</span>
+        </div>
+        <svg class="mini-chart" id="chartOTB" viewBox="0 0 300 120" preserveAspectRatio="none"></svg>
+      </div>
+
+      <div class="mini-chart-card">
+        <div class="mini-chart-title">Pickup pace (last 24h)</div>
+        <svg class="mini-chart" id="chartPickup" viewBox="0 0 300 120" preserveAspectRatio="none"></svg>
+      </div>
+
+      <div class="mini-chart-card">
+        <div class="mini-chart-title">Occupancy (current vs forecast)</div>
+        <div class="chart-legend" style="display:flex; gap:12px; align-items:center; margin:6px 0 8px 0; flex-wrap:wrap;">
+          <span class="legend-item"><span class="legend-dot"></span> Forecast occ%</span>
+          <span class="legend-item" style="opacity:0.7;"><span class="legend-dot dashed"></span> Current occ%</span>
+        </div>
+        <svg class="mini-chart" id="chartOccForecast" viewBox="0 0 300 120" preserveAspectRatio="none"></svg>
+      </div>
+
+      <div class="mini-chart-card">
+        <div class="mini-chart-title">Alerts</div>
+        <table class="compare-table" style="margin-top:10px;">
+          <thead>
+            <tr>
+              <th style="width:28%;">Date</th>
+              <th style="width:22%;">Signal</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody id="forecastAlertsBody">
+            <tr><td colspan="3" class="rms-muted">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footer-note" style="margin-top:12px;">
+      Notes: OTB is derived from inventory (total − remaining). Pickup is estimated from the 24h availability delta in the demo dataset. Forecast is a lightweight heuristic for prototype purposes.
+    </div>
+  </div>
+</div>
+
+<div class="hidden" id="autopilotView">
+  <div class="card">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <div>
+        <h1 style="margin:0;">Autopilot</h1>
+        <div class="rms-muted" style="margin-top:6px;">
+          Automatically apply rule-based recommendations within your pricing restrictions and safety limits.
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div class="ap-status-pill" id="apStatusPill">Status: —</div>
+      </div>
+    </div>
+
+    <div class="ap-grid" style="margin-top:14px;">
+      <div class="card" style="margin:0; padding:14px;">
+        <h2 style="margin:0 0 10px 0; font-size:16px;">1) Autopilot switch</h2>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div>
+            <div style="font-weight:700;">Enable Autopilot</div>
+            <div class="rms-muted" style="margin-top:4px;">
+              When enabled, the system will simulate scheduled runs using your current pricing mode (Occupancy / Forecast occupancy / Lead-time).
+            </div>
+          </div>
+          <label class="switch" title="Enable/Disable Autopilot">
+            <input type="checkbox" id="apEnabled">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="ap-kv" style="margin-top:10px;">
+          <div><span class="k">Last run</span><span class="v" id="apLastRun">—</span></div>
+          <div><span class="k">Mode</span><span class="v" id="apModeLabel">—</span></div>
+          <div><span class="k">Restrictions</span><span class="v">Always enforced</span></div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div style="min-width:160px; font-weight:700;">Run interval</div>
+          <input class="input" id="apIntervalMinutes" type="number" min="1" max="1440" step="1" style="width:120px;" />
+          <span class="rms-muted">minutes</span>
+          <div style="flex:1;"></div>
+          <div class="rms-muted" style="min-width:120px;">Next run in</div>
+          <div style="font-weight:800; min-width:88px;" id="apNextRunIn">—</div>
+          <button class="button secondary" id="apRunOnceBtn" type="button">Run once now</button>
+          <button class="button tertiary" id="apResetBtn" type="button">Reset preferences</button>
+        </div>
+        <div class="rms-muted" style="margin-top:6px; font-size:12px;" id="apAutoRunHint">
+          When enabled, Autopilot will simulate a scheduled run at this interval until disabled.
+        </div>
+        <div id="apAutoRunLog" style="margin-top:10px; max-height:120px; overflow:auto; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:8px; font-size:12px;">
+          <div class="rms-muted">No scheduled runs yet.</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin:0; padding:14px;">
+        <h2 style="margin:0 0 10px 0; font-size:16px;">2) Scope</h2>
+        <div class="ap-form">
+          <div class="ap-row">
+            <label class="ap-label">Date window</label>
+            <select class="select" id="apWindowDays">
+              <option value="7">Next 7 days</option>
+              <option value="14" selected>Next 14 days</option>
+              <option value="30">Next 30 days</option>
+              <option value="60">Next 60 days</option>
+            </select>
+          </div>
+          <div class="ap-row">
+            <label class="ap-label">Room types</label>
+            <div class="ap-checkgrid" id="apRoomTypeChecks"></div>
+          </div>
+          <div class="ap-row">
+            <label class="ap-label">Rate plans</label>
+            <div class="ap-checkgrid" id="apRatePlanChecks"></div>
+          </div>
+        </div>
+        <div class="rms-muted" style="margin-top:8px; font-size:12px;">
+          Tip: Start with one room type + one rate plan to demonstrate the workflow.
+        </div>
+      </div>
+
+      <div class="card" style="margin:0; padding:14px;">
+        <h2 style="margin:0 0 10px 0; font-size:16px;">3) Safety limits</h2>
+        <div class="ap-form">
+          <div class="ap-row">
+            <label class="ap-label">Skip sold-out dates</label>
+            <label class="ap-inline">
+              <input type="checkbox" id="apSkipSoldOut" checked>
+              <span>Do not change prices when remaining rooms ≤ 0</span>
+            </label>
+          </div>
+          <div class="ap-row">
+            <label class="ap-label">Max change per run</label>
+            <div class="ap-two">
+              <div class="ap-inline">
+                <span class="rms-muted" style="min-width:90px;">Percent</span>
+                <input class="input" id="apMaxPct" type="number" min="0" max="100" step="1" value="10" style="width:110px;">
+                <span class="rms-muted">%</span>
+              </div>
+              <div class="ap-inline">
+                <span class="rms-muted" style="min-width:90px;">Absolute</span>
+                <input class="input" id="apMaxAbs" type="number" min="0" step="1000" value="200000" style="width:150px;">
+                <span class="rms-muted">IDR</span>
+              </div>
+            </div>
+          </div>
+          <div class="ap-row">
+            <label class="ap-label">Big-change handling</label>
+            <select class="select" id="apBigChangeAction">
+              <option value="queue" selected>Queue for review (do not apply)</option>
+              <option value="cap">Cap to limit and apply</option>
+            </select>
+          </div>
+          <div class="ap-row">
+            <label class="ap-label">Minimum change</label>
+            <div class="ap-inline">
+              <input class="input" id="apMinDelta" type="number" min="0" step="1000" value="5000" style="width:150px;">
+              <span class="rms-muted">IDR (ignore smaller differences)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+<div class="hidden" id="calendarView">
+
+<div class="card" id="rms-root">
+<h1>Revenue Management</h1>
+<p style="color:#6b7280;font-size:13px;margin:8px 0 16px 0;">
+          Click a date to view details. Prototype uses a tiny in-memory “DB” (date × room type × rate plan) for prices and inventory.
+        </p>
+<!-- Calendar goes here -->
+<div id="calendarContainer">
+<div class="calendar-shell">
+<div class="calendar-toolbar">
+<button class="toolbtn" id="btnToday">📅 Today</button>
+<button class="toolbtn" id="btnGoDashboard">🏠 Overview</button>
+<button class="toolbtn" id="btnManualPrices">Manually set prices</button>
+<button class="toolbtn" id="btnPricingRules">Change pricing rules</button>
+<div aria-label="Month navigation" class="monthnav">
+<button aria-label="Previous month" class="navbtn" id="prevMonth">‹</button>
+<div id="monthTitle">February 2024</div>
+<button aria-label="Next month" class="navbtn" id="nextMonth">›</button>
+</div>
+<div class="right">
+<span class="label">Room type price</span>
+<select class="roomselect" id="roomTypeSelect">
+<option selected="" value="Ocean View Bungalow">Ocean View Bungalow</option>
+<option value="Family Bungalow">Family Bungalow</option>
+<option value="Grand View">Grand View</option>
+<option value="Grand Beach">Grand Beach</option>
+<option value="Private Bamboo Bungalow">Private Bamboo Bungalow</option>
+<option value="Presidential Suite">Presidential Suite</option>
+</select>
+<span class="label">Rate plan</span>
+<select class="roomselect" id="ratePlanSelect">
+<option selected="" value="Flexible Rate">Flexible Rate</option>
+<option value="Non-refundable Rate">Non-refundable Rate</option>
+<option value="Breakfast Included">Breakfast Included</option>
+<option value="Package Deal">Package Deal</option>
+</select>
+</div>
+</div>
+<div class="calendar">
+<div class="calendar-dow">
+<div>Monday</div><div>Tuesday</div><div>Wednesday</div><div>Thursday</div>
+<div>Friday</div><div>Saturday</div><div>Sunday</div>
+</div>
+<div class="calendar-grid" id="calendarGrid"></div>
+</div>
+<div class="day-detail">
+<div class="day-detail-head">
+<div>
+<div class="date" id="detailDate">Fri, Feb 16, 2024</div>
+<div class="sub" id="detailSub">Showing: Ocean View Bungalow • Flexible Rate</div>
+</div>
+<div class="day-detail-actions">
+<button class="button secondary" id="detailManual">Manually set prices</button>
+<button class="button secondary" id="detailRules">Change pricing rules</button>
+<button class="button primary" id="detailApply">Apply recommendation</button>
+</div>
+</div>
+<div class="pinbar" id="pinBar">
+<div style="font-weight:700;">Pin columns</div>
+<label class="pin-item"><input checked="" id="pin_room" type="checkbox"/> Room type</label>
+<label class="pin-item"><input checked="" id="pin_avail" type="checkbox"/> Availability</label>
+<label class="pin-item"><input checked="" id="pin_latest" type="checkbox"/> Latest change</label>
+<label class="pin-item"><input checked="" id="pin_rec" type="checkbox"/> Recommendation</label>
+<div class="pinbar-right">
+  <label class="pin-select">Latest change plan
+    <select id="latestPlanSelect" class="pin-select-control"></select>
+  </label>
+  <div class="footer-note">Scroll right to view other rate plans</div>
+</div>
+</div>
+<div class="detail-table-wrap" id="detailTableWrap">
+<table>
+<thead id="roomTableHead"></thead>
+<tbody id="roomTableBody"></tbody>
+</table>
+</div>
+<div class="footer-note">
+                Prototype: prices + inventory come from an in-memory DB. Manual/apply changes update DB and refresh the UI.
+              </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="hidden" id="pricingRulesView">
+<div class="card">
+<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+<div>
+<h1 style="margin:0;">Pricing rule change</h1>
+<div class="rms-muted" style="margin-top:6px;">
+          Edit the rule set used to generate price recommendations. Changes are saved locally in this browser.
+        </div>
+</div>
+<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+<button class="button" id="btnRulesBackCalendar">Back to calendar</button>
+<button class="button" id="btnRulesBackOverview">Back to overview</button>
+<button class="button primary" id="btnRulesSave">Save changes</button>
+</div>
+</div>
+<div style="margin-top:14px; display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+  <div>
+    <h2 style="margin:0; font-size:16px;">Pricing mode</h2>
+    <div class="rms-muted" style="margin-top:6px;">
+      Select how price recommendations are generated. The active mode applies across the calendar.
+    </div>
+  </div>
+  <div class="mode-pill" id="activeModePill">Active mode: —</div>
+</div>
+
+<div class="mode-list" id="pricingModeList" style="margin-top:10px;">
+  <label class="mode-option">
+    <input type="radio" name="pricingMode" value="manual" id="mode_manual">
+    <div class="mode-meta">
+      <div class="mode-title">Manual pricing</div>
+      <div class="mode-desc">No rules. Recommendations are disabled; prices are set manually.</div>
+    </div>
+  </label>
+
+  <label class="mode-option">
+    <input type="radio" name="pricingMode" value="occ" id="mode_occ">
+    <div class="mode-meta">
+      <div class="mode-title">Occupancy-based</div>
+      <div class="mode-desc">Only occupancy affects the recommendation: farther dates do not matter.</div>
+    </div>
+  </label>
+
+  <label class="mode-option">
+    <input type="radio" name="pricingMode" value="occ_lead" id="mode_occ_lead">
+    <div class="mode-meta">
+      <div class="mode-title">Lead time + occupancy</div>
+      <div class="mode-desc">Farther dates → higher price, higher occupancy → higher price. The total adjustment combines both factors.</div>
+    </div>
+  </label>
+
+  <label class="mode-option">
+    <input type="radio" name="pricingMode" value="forecast_occ" id="mode_forecast_occ">
+    <div class="mode-meta">
+      <div class="mode-title">Forecast occupancy</div>
+      <div class="mode-desc">Uses forecasted occupancy (not current occupancy) to adjust price by tier.</div>
+    </div>
+  </label>
+
+</div>
+
+<div class="footer-note" id="modeNote" style="margin-top:8px;"></div>
+<div style="border-top:1px solid #e5e7eb; margin:14px 0;"></div>
+<div class="rules-grid">
+<div class="card" id="rulesTiersCard" style="margin:0;">
+<h2 id="rulesOccTitle" style="margin:0 0 10px 0; font-size:16px;">Occupancy-based recommendation tiers</h2>
+<div class="rms-muted" id="rulesOccDesc" style="margin-bottom:10px;">
+          For the selected date and room type, the recommendation adjusts the current price by the tier percentage.
+        </div>
+<div style="overflow:auto; border:1px solid #e5e7eb; border-radius:12px;">
+<table class="detail-table" style="width:100%; border-collapse:separate; border-spacing:0;">
+<thead>
+<tr>
+<th style="position:sticky; top:0;">Min occ %</th>
+<th style="position:sticky; top:0;">Max occ %</th>
+<th style="position:sticky; top:0;">Adjustment %</th>
+</tr>
+</thead>
+<tbody id="rulesTierBody"></tbody>
+</table>
+</div>
+<div style="display:flex; gap:10px; align-items:center; margin-top:10px; flex-wrap:wrap;">
+<button class="button" id="btnRulesAddTier">Add tier</button>
+<button class="button" id="btnRulesReset">Reset to default</button>
+<span class="footer-note">Tip: Keep tiers contiguous (e.g., 0–35, 36–45, ...).</span>
+</div>
+</div>
+<div class="card" id="rulesBehaviorCard" style="margin:0;">
+<h2 style="margin:0 0 10px 0; font-size:16px;">Display behavior</h2>
+<div style="display:flex; flex-direction:column; gap:10px;">
+<label style="display:flex; gap:10px; align-items:flex-start;">
+<input id="ruleSoldOutHideRec" type="checkbox">
+<div>
+<div style="font-weight:700;">Hide recommendation when sold out</div>
+<div class="footer-note">If a room type is sold out on a date, show “Sold out” instead of a target price.</div>
+</div>
+</input></label>
+<label style="display:flex; gap:10px; align-items:flex-start;">
+<input id="ruleSoldOutHideLatest" type="checkbox">
+<div>
+<div style="font-weight:700;">Hide latest price change when sold out</div>
+<div class="footer-note">Prevents “current price” messaging when inventory is 0.</div>
+</div>
+</input></label>
+<div style="border-top:1px solid #e5e7eb; margin:2px 0;"></div>
+<label style="display:flex; gap:10px; align-items:center;">
+<span style="min-width:140px; font-weight:700;">Rounding (IDR)</span>
+<input class="input" id="ruleRounding" min="1" step="1" style="width:140px;" type="number">
+</input></label>
+<div class="footer-note">Example: rounding 5000 means the recommended price will snap to the nearest 5,000 IDR.</div>
+</div>
+<div style="border-top:1px solid #e5e7eb; margin:14px 0;"></div>
+<h2 style="margin:0 0 10px 0; font-size:16px;">Change log</h2>
+<div id="rulesLog" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+                                 font-size:12px; color:#111827; background:#f9fafb; border:1px solid #e5e7eb;
+                                 border-radius:12px; padding:10px; max-height:240px; overflow:auto;"></div>
+</div>
+
+<div class="card hidden" id="rulesLeadCard" style="margin:0; grid-column: 1 / -1;">
+  <h2 style="margin:0 0 10px 0; font-size:16px;">Lead-time adjustment tiers</h2>
+  <div class="rms-muted" id="rulesLeadDesc" style="margin-bottom:10px;">
+    In this mode, farther dates increase the recommended price. The final recommendation combines lead time and occupancy adjustments.
+  </div>
+
+  <div style="overflow:auto; border:1px solid #e5e7eb; border-radius:12px;">
+    <table class="detail-table" style="width:100%; border-collapse:separate; border-spacing:0;">
+      <thead>
+        <tr>
+          <th style="text-align:left; padding:10px 12px;">Min lead days</th>
+          <th style="text-align:left; padding:10px 12px;">Max lead days</th>
+          <th style="text-align:left; padding:10px 12px;">Adjustment %</th>
+        </tr>
+      </thead>
+      <tbody id="rulesLeadTierBody"></tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <button class="button" id="btnRulesAddLeadTier">Add lead-time tier</button>
+    <button class="button" id="btnRulesResetLead">Reset lead-time tiers</button>
+    <div class="footer-note">Tip: Keep tiers contiguous (e.g., 0–7, 8–30, 31–90, ...).</div>
+  </div>
+</div>
+
+
+<div class="card hidden" id="rulesForecastCard" style="margin:0; grid-column: 1 / -1;">
+  <h2 style="margin:0 0 10px 0; font-size:16px;">Forecast occupancy adjustment tiers</h2>
+  <div class="rms-muted" id="rulesForecastDesc" style="margin-bottom:10px;">
+    In forecast modes, the recommendation uses forecasted occupancy (from the Forecast page heuristic) instead of current occupancy.
+  </div>
+
+  <div style="overflow:auto; border:1px solid #e5e7eb; border-radius:12px;">
+    <table class="detail-table" style="width:100%; border-collapse:separate; border-spacing:0;">
+      <thead>
+        <tr>
+          <th style="position:sticky; top:0;">Min forecast occ %</th>
+          <th style="position:sticky; top:0;">Max forecast occ %</th>
+          <th style="position:sticky; top:0;">Adjustment %</th>
+        </tr>
+      </thead>
+      <tbody id="rulesForecastTierBody"></tbody>
+    </table>
+  </div>
+
+  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;">
+    <button class="button" id="btnRulesAddForecastTier">Add forecast tier</button>
+    <button class="button" id="btnRulesResetForecast">Reset forecast tiers</button>
+    <div class="footer-note">Tip: Keep tiers contiguous (e.g., 0–35, 36–45, 46–69, ...).</div>
+  </div>
+</div>
+
+
+</div>
+</div>
+</div>
+
+
+<div class="hidden" id="pricingRestrictionsView">
+  <div class="card">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <div>
+        <h1 style="margin:0;">Pricing restrictions</h1>
+        <div class="rms-muted" style="margin-top:6px;">
+          Hard constraints to keep generated prices within acceptable boundaries. Saved locally in this browser.
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <button class="button" id="btnRestrBackRules">Back to pricing rules</button>
+        <button class="button" id="btnRestrBackCalendar">Back to calendar</button>
+        <button class="button primary" id="btnRestrSave">Save changes</button>
+      </div>
+    </div>
+
+    <div class="restr-grid" style="margin-top:16px; display:grid; grid-template-columns: 1fr; gap:14px;">
+      <div class="card" style="margin:0; padding:14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h2 style="margin:0; font-size:16px;">1) Absolute price bounds (by room type)</h2>
+            <div class="rms-muted" style="margin-top:6px;">Define minimum and maximum allowed prices for each room type. Each constraint can be enabled or disabled.</div>
+          </div>
+          <button class="button secondary" id="btnRestrResetAbs" type="button">Reset to suggested</button>
+        </div>
+        <div style="margin-top:12px; overflow:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:90px;">Enabled</th>
+                <th>Room type</th>
+                <th style="width:180px;">Min price (IDR)</th>
+                <th style="width:180px;">Max price (IDR)</th>
+              </tr>
+            </thead>
+            <tbody id="restrAbsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin:0; padding:14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h2 style="margin:0; font-size:16px;">2) Room type price gap constraints</h2>
+            <div class="rms-muted" style="margin-top:6px;">Ensure price differences between two room types stay within a range (same date &amp; rate plan). Starts empty.</div>
+          </div>
+          <button class="button secondary" id="btnRestrAddRoomGap" type="button">Add constraint</button>
+        </div>
+        <div style="margin-top:12px; overflow:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:90px;">Enabled</th>
+                <th style="min-width:220px;">Room A</th>
+                <th style="min-width:220px;">Room B</th>
+                <th style="width:170px;">Min gap (A − B)</th>
+                <th style="width:170px;">Max gap (A − B)</th>
+                <th style="width:120px;"></th>
+              </tr>
+            </thead>
+            <tbody id="restrRoomGapTbody">
+              <tr class="restr-empty"><td colspan="6" class="rms-muted">No room gap constraints. Click “Add constraint” to create one.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin:0; padding:14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h2 style="margin:0; font-size:16px;">3) Rate plan price gap constraints</h2>
+            <div class="rms-muted" style="margin-top:6px;">Ensure price differences between two rate plans stay within a range (same date &amp; room type). Starts empty.</div>
+          </div>
+          <button class="button secondary" id="btnRestrAddPlanGap" type="button">Add constraint</button>
+        </div>
+        <div style="margin-top:12px; overflow:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:90px;">Enabled</th>
+                <th style="min-width:240px;">Plan A</th>
+                <th style="min-width:240px;">Plan B</th>
+                <th style="width:170px;">Min gap (A − B)</th>
+                <th style="width:170px;">Max gap (A − B)</th>
+                <th style="width:120px;"></th>
+              </tr>
+            </thead>
+            <tbody id="restrPlanGapTbody">
+              <tr class="restr-empty"><td colspan="6" class="rms-muted">No rate plan gap constraints. Click “Add constraint” to create one.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="rms-muted" style="font-size:12px;">
+        Notes: These are strong constraints applied after rule-based recommendation. When multiple constraints apply, the allowed range is intersected.
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+
+<!-- =========================================================
+       MODULE CONTAINERS (placeholders for future interactions)
+  ========================================================== -->
+<div id="toast-root"></div>
+<div id="modal-root"></div>
+<div id="drawer-root"></div>
+<script src="rms.state.js"></script>
+<script src="rms.ui.js"></script>
+<script src="rms.properties.js"></script>
+<script src="rms.db.js"></script>
+<script src="rms.calendar.core.js"></script>
+<script src="rms.rules.js"></script>
+<script src="rms.calendar.extras.js"></script>
+<script src="rms.autopilot.js"></script>
+<script src="rms.overview.js"></script>
+<script src="rms.forecast.js"></script>
+<script src="rms.restrictions.js"></script>
+
+<div class="hidden" id="propertiesView">
+  <div class="card">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+      <div>
+        <div class="card-title">Properties</div>
+        <div class="rms-muted" style="margin-top:4px;">Manage properties, currencies, timezones, and which room types / rate plans are enabled for each property. Settings are saved per property in localStorage.</div>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="button" id="btnAddProperty">+ Add property</button>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1.2fr 0.8fr; gap:14px; margin-top:14px;">
+      <div class="card" style="margin:0;">
+        <div class="card-title" style="font-size:14px;">Property list</div>
+        <div class="table-wrap" style="margin-top:10px;">
+          <table class="mini-table" id="propertiesTable">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Name</th>
+                <th style="text-align:left;">ID</th>
+                <th style="text-align:left;">Currency</th>
+                <th style="text-align:left;">Timezone</th>
+                <th style="text-align:left;">Status</th>
+                <th style="text-align:left;">Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="rms-muted" style="margin-top:10px;">Tip: Use “Duplicate” to clone a property’s demo data + settings.</div>
+      </div>
+
+      <div class="card" style="margin:0;">
+        <div class="card-title" style="font-size:14px;">Selected property</div>
+        <div id="propertyEditorEmpty" class="rms-muted" style="margin-top:10px;">Select a property to edit.</div>
+
+        <div id="propertyEditor" class="hidden" style="margin-top:10px;">
+          <div class="grid2">
+            <div>
+              <label class="field-label">Name</label>
+              <input class="field" id="propName" type="text" />
+            </div>
+            <div>
+              <label class="field-label">ID (read-only)</label>
+              <input class="field" id="propId" type="text" disabled />
+            </div>
+          </div>
+
+          <div class="grid2" style="margin-top:10px;">
+            <div>
+              <label class="field-label">Currency</label>
+              <select class="field" id="propCurrency">
+                <option value="IDR">IDR</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <option value="SGD">SGD</option>
+                <option value="AUD">AUD</option>
+                <option value="CNY">CNY</option>
+                <option value="JPY">JPY</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Timezone</label>
+              <input class="field" id="propTimezone" type="text" placeholder="e.g. Asia/Makassar" />
+            </div>
+          </div>
+
+          <div style="margin-top:12px;">
+            <div class="card-title" style="font-size:13px;">Enabled room types</div>
+            <div class="rms-muted" style="margin-top:2px;">These control what appears in selectors and tables (demo data is preserved).</div>
+            <div id="propRoomTypes" class="chip-grid" style="margin-top:8px;"></div>
+          </div>
+
+          <div style="margin-top:12px;">
+            <div class="card-title" style="font-size:13px;">Enabled rate plans</div>
+            <div class="rms-muted" style="margin-top:2px;">These control what appears in selectors and tables (demo data is preserved).</div>
+            <div id="propRatePlans" class="chip-grid" style="margin-top:8px;"></div>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;">
+            <button class="button" id="btnSaveProperty">Save</button>
+            <button class="button" id="btnResetPropertySelection">Reset enabled lists</button>
+            <button class="button" id="btnSetActiveProperty">Set active</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
